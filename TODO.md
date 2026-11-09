@@ -16,10 +16,13 @@ The first MVP implements read-only inspection of one local MP3 file on Linux. Wo
 - [ ] Review the first MVP's terminal output and error messages in everyday use.
 - [ ] Agree on the next user-facing capability and its success criteria before extending the scope.
 
+## Completed extension
+
+- [x] Add directory scanning and batch inspection: immediate-folder scanning, optional `--recursive`, deterministic order, per-path errors, and summary counts.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
-- [ ] Consider directory scanning and batch inspection.
 - [ ] Research identification and metadata services using the questions in `docs/open-questions.md`.
 - [ ] Define preview, approval, and integrity requirements before adding metadata writing.
 - [ ] Consider packaging and other operating systems when local Linux usage is established.

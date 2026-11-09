@@ -57,6 +57,20 @@ Use the checklist to track progress. When a question is resolved, record the dec
 
 The questions below are preserved for the broader product. Identification, enrichment, writing, and batch-processing questions do not block the first MVP. Overlapping technical questions can be revisited as the product expands.
 
+## Directory Inspection — Agreed Extension
+
+The user selected directory scanning and batch inspection as the next capability after the single-file MVP.
+
+- [x] How should users inspect a directory?
+
+  **Decision:** `l1ner inspect <directory>` scans the immediate folder; `l1ner inspect --recursive <directory>` also scans subfolders. Flags precede the path. Single-file inspection remains available.
+
+- [x] Which files are included, and how are failures handled?
+
+  **Decision:** Process regular `.mp3` files case-insensitively and sequentially in lexical directory traversal order. Skip discovered symlinks and non-MP3 files; reject a symlink directory root. Continue after per-file and directory-read errors, report affected paths to stderr, and summarize successful files, failed files, and scan errors. Any failure gives exit code 1. No matches is a successful empty scan. Output-write failure stops processing.
+
+The extension remains local, Linux-only, offline, and read-only. Directory defaults are documented implementation choices that can be revisited with user feedback.
+
 ## Broader Product — Product Validation
 
 - [ ] What reference collection represents the initial users' libraries, including difficult and unresolved cases?

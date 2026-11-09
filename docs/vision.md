@@ -175,7 +175,7 @@ The CLI reads the file without modifying it. It works locally without external l
 - Metadata enrichment, editing, or writing.
 - Artwork retrieval, extraction, or display.
 - Change previews and approval workflows.
-- Directory scanning and batch processing.
+- Metadata enrichment or writing in batches (read-only directory inspection is available as an extension).
 - Report files and structured output for automation.
 - Renaming, moving, deleting, or reorganizing files.
 - Duplicate detection.
@@ -189,6 +189,10 @@ The CLI reads the file without modifying it. It works locally without external l
 - Playlist management.
 
 The broader capabilities remain future directions; they are not requirements for this first MVP.
+
+### Implemented Extension — Directory Inspection
+
+Following completion of the first MVP, read-only inspection also accepts directories. The CLI scans MP3s in the immediate folder by default or includes subfolders with `--recursive`. It continues after individual failures, reports errors with file paths, and summarizes successes, failures, and scan errors. Existing single-file output remains unchanged. See [the recorded decisions](open-questions.md#directory-inspection--agreed-extension).
 
 ## 8. Success Criteria
 

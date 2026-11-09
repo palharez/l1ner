@@ -7,7 +7,7 @@
 - Platform: Linux.
 - Language: Go.
 - Execution: run from source on the user's local machine.
-- Interface: `l1ner inspect <file-path>`.
+- Interface: `l1ner inspect [--recursive] <file-or-directory>`; recursion applies only to directories.
 - Metadata reader: `github.com/bogem/id3v2/v2`, pinned to `v2.1.4` for initial implementation.
 - Supported tags: ID3v2.3 and ID3v2.4 in MP3 files.
 - File access: read-only; no external services or network lookups.
@@ -62,7 +62,9 @@ Implemented files:
 | File | Responsibility |
 | --- | --- |
 | `go.mod`, `go.sum` | Module definition and pinned dependencies. |
-| `main.go` | Entry point, `inspect` argument validation, help, and exit status. |
+| `main.go` | Entry point, argument parsing, file/directory dispatch, help, and exit status. |
+| `batch.go` | Directory traversal, sequential batch inspection, per-path errors, and summary counts. |
+| `batch_test.go` | Generated directory fixtures, recursion, filtering, symlink handling, continuation, output errors, and integrity checks. |
 | `inspect.go` | Read-only file access, tag detection, and tag-header validation. |
 | `frames.go` | Frame-header validation, iteration, and library decoding adapter. |
 | `output.go` | Stable ordering and readable text/binary frame presentation. |
@@ -99,5 +101,13 @@ Local validation passed:
 - Tests and reference inspection ran with `GOPROXY=off` after dependency setup; runtime inspection makes no network requests.
 
 The reference includes a nonstandard `YEAR` frame. It is reported as unparsed data, not decoded as a standard date field.
+
+## Directory Inspection Extension
+
+`batch.go` uses standard-library `filepath.WalkDir` for lexical traversal. Immediate-folder scanning is the default; `--recursive` includes nested folders. Only regular `.mp3` files are selected, case-insensitively. Symlink entries are skipped, and a directory symlink root is rejected explicitly.
+
+Discovery records paths and directory-read errors. Processing stays sequential and delegates each file to the existing read-only inspector and renderer. File errors and scan errors are reported separately; they do not stop other inspections. An output-write failure stops the batch. Successful output ends with counts of inspected files, failed files, and scan errors. The process exits 1 on any failure and 0 for a successful empty scan.
+
+Tests use temporary directories and generated metadata; they cover nesting, uppercase extensions, ignored files, symlink loops, empty scans, per-file failure continuation, unreadable subdirectories, writer failures, and unchanged files.
 
 Packaging, distribution, metadata writing, additional tag formats, and external services remain deferred.

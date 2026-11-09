@@ -4,11 +4,11 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** First MVP implemented: local, read-only MP3 metadata inspection.
+**Status:** Read-only MP3 inspection supports individual files and directories.
 
 ## First MVP
 
-Read existing metadata from a single MP3 file and display it in the terminal.
+Read existing metadata from a local MP3 file or directory and display it in the terminal.
 
 - Built in Go for Linux, running locally from source.
 - Supports ID3v2.3 and ID3v2.4 tags.
@@ -18,7 +18,7 @@ Read existing metadata from a single MP3 file and display it in the terminal.
 - Reports unreadable files and unsupported tag versions clearly.
 - Leaves the file unchanged and performs no network lookups.
 
-Identification, external services, metadata editing, directory scanning, and batch processing are deferred.
+Directory scanning extends the original single-file MVP. Identification, external services, and metadata editing remain deferred.
 
 ## Usage
 
@@ -34,6 +34,18 @@ Inspect a local file:
 go run . inspect music/song.mp3
 ```
 
+Inspect MP3s directly inside a directory:
+
+```sh
+go run . inspect music/
+```
+
+Include subdirectories:
+
+```sh
+go run . inspect --recursive music/
+```
+
 Or build and run the CLI:
 
 ```sh
@@ -41,7 +53,17 @@ go build -o bin/l1ner .
 ./bin/l1ner inspect music/song.mp3
 ```
 
-Use `go run . --help` for usage. File paths containing spaces must be quoted.
+Use `go run . --help` for usage. Put flags before the path; quote paths containing spaces.
+
+### Directory behavior
+
+- Scan only the selected folder unless `--recursive` is supplied.
+- Inspect regular files with a case-insensitive `.mp3` extension in lexical directory traversal order. Other files and discovered symlinks are skipped. A directory symlink supplied as the root is rejected explicitly.
+- Process files sequentially and keep each file's existing metadata layout, separated by a blank line.
+- Report per-file errors with their paths to stderr and continue inspecting other files. Unreadable directories are scan errors; readable sibling directories still get scanned.
+- Finish with `Summary: N inspected, N failed, N scan errors`. `inspected` counts successful files, including files without tags; `failed` counts file inspection failures. Skipped non-MP3 files are not counted.
+- If there are no matching MP3s and no scan errors, print `No MP3 files found.` and a zero summary, exiting successfully.
+- Exit with status 1 if any file or scan fails. An output-write failure stops the batch immediately, so a complete summary may not be available. Single-file output stays unchanged.
 
 Illustrative output:
 
