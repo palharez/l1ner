@@ -1,6 +1,6 @@
 # l1ner — First MVP Technical Plan
 
-**Status:** Planning; implementation has not started.
+**Status:** First MVP implemented and validated locally.
 
 ## Agreed Decisions
 
@@ -31,7 +31,7 @@ Sources consulted during selection:
 1. Validate the invocation and open the input file read-only.
 2. Detect the tag version before parsing. Report unsupported versions explicitly; do not interpret a parser's empty result alone as proof that metadata is absent. Account for legacy ID3v1 tags when distinguishing unsupported metadata from no metadata.
 3. Parse supported tags using the library's reader API, without calling save or write methods.
-4. Enumerate all exposed frames. Display decoded text in full, custom tags by name, and all exposed repeated values. Describe artwork and other binary data by type and size where available. Identify unknown frames by frame identifier and payload size; do not print raw binary data.
+4. Validate frame boundaries and parse each frame separately to preserve repeated identifiers. Enumerate all exposed frames. Display decoded text in full, custom tags by name, and all exposed repeated values. Describe artwork and other binary data by type and size where available. Identify unknown frames by frame identifier and payload size; do not print raw binary data.
 5. Print the file path followed by `Tag: Value` lines. Use `No metadata found` only when metadata is absent. Report malformed tags or read failures clearly.
 6. Close the file without changing it.
 
@@ -57,35 +57,47 @@ The selected library's upstream `go test ./...` passed with network access disab
 
 Use Go's standard library for argument handling and terminal output; no CLI framework is needed for this single-command MVP.
 
-Planned files (not yet created):
+Implemented files:
 
 | File | Responsibility |
 | --- | --- |
 | `go.mod`, `go.sum` | Module definition and pinned dependencies. |
 | `main.go` | Entry point, `inspect` argument validation, help, and exit status. |
-| `inspect.go` | Read-only file access, tag-version checks, parsing, and frame enumeration. |
+| `inspect.go` | Read-only file access, tag detection, and tag-header validation. |
+| `frames.go` | Frame-header validation, iteration, and library decoding adapter. |
 | `output.go` | Stable ordering and readable text/binary frame presentation. |
-| `inspect_test.go`, `output_test.go` | Behavior checks for metadata coverage, output, failures, and file integrity. |
+| `inspect_test.go` | Behavior checks for metadata coverage, output, failures, and file integrity. |
+
+Follow the Google Go style conventions documented in [CONTRIBUTING.md](../CONTRIBUTING.md). File access, tag validation, frame validation, and decoding are separate operations; coordinating functions remain focused.
 
 Keep these in one package initially. Additional package layers are unnecessary for the agreed scope.
 
-Planned local invocation from the repository root:
+Local invocation from the repository root:
 
 ```sh
 go run . inspect music/tom-lehrer-when-you-are-old-and-gray.mp3
 ```
 
-Proposed output behavior:
+Output behavior:
 
 - Print successful inspection output to stdout and errors to stderr.
 - Return exit code 0 for successful inspection, including a file with no tags; 1 for read, parse, or unsupported-version errors; 2 for invalid arguments.
 - Sort frame identifiers for consistent output and retain every repeated value exposed by the parser.
 - Keep original decoded text content, with terminal control characters escaped so metadata cannot issue terminal commands.
 
-## Remaining Technical Details
+## Implementation Coverage and Validation
 
-- Validate parser behavior for repeated values and unsupported frame features; document limitations explicitly.
-- Validate the proposed output and error behavior during implementation.
-- Execute the planned source-based run command and document the verified procedure.
+The CLI uses read-only file access and never calls metadata write APIs. Tag bodies are limited to 64 MiB. Tag-level flags and frame format flags are rejected explicitly because the selected reader does not reliably handle all transformations. CHAP/CTOC frames are summarized as unparsed data rather than passed to the limited nested-frame parser. Unknown frames are summarized; ordinary URL frames are displayed as text. A supported ID3v2 tag takes precedence over a coexisting ID3v1 tag.
 
-These details remain planning work. Packaging, distribution, metadata writing, additional tag formats, and external services are deferred.
+The CLI checks the MP3 extension and recognizes ID3 or MPEG headers; it does not validate the entire audio stream.
+
+Local validation passed:
+
+- `go test ./...`: independently constructed ID3v2.3/v2.4 fixtures covering repeated text frames, custom tags, artwork, comments, unknown frames, terminal escaping, absent tags, malformed sizes, unsupported versions/flags, invalid arguments, missing/unreadable files, and unchanged input bytes.
+- `go vet ./...` and a CLI build.
+- Reference-file inspection compared with an independent byte-level check of embedded frames. The whole-file SHA-256 remained `9f34ee07c75be1c4a35a72293339f92707500bcaeed2e2510ee139ff20bc1d34` before and after inspection.
+- Tests and reference inspection ran with `GOPROXY=off` after dependency setup; runtime inspection makes no network requests.
+
+The reference includes a nonstandard `YEAR` frame. It is reported as unparsed data, not decoded as a standard date field.
+
+Packaging, distribution, metadata writing, additional tag formats, and external services remain deferred.

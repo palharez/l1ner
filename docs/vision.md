@@ -2,7 +2,7 @@
 
 **Tagline:** Give your music its identity back.
 
-**Status:** Concept / Discovery
+**Status:** First MVP implemented; broader product remains in discovery.
 
 This document defines the product concept, scope, principles, and intended outcomes. The first MVP targets Linux and uses Go, as agreed during discovery. Metadata reading uses `github.com/bogem/id3v2/v2`, as recorded in the [technical plan](technical-plan.md). External APIs remain undecided. Questions for the next phase are tracked in [Open Questions](open-questions.md).
 
