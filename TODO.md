@@ -6,7 +6,7 @@ The first MVP implements read-only inspection of one local MP3 file on Linux. Wo
 
 - [x] Add GitHub Actions CI on Linux to check formatting, run `go test ./...` and `go vet ./...`, and build the CLI. Tests must work without the ignored `music/` directory.
 - [x] Add `CONTRIBUTING.md` with setup instructions, local checks, the current scope, and guidance for reporting bugs and proposing changes.
-- [ ] Add dedicated output tests for stable ordering, repeated values, Unicode, terminal control escaping, binary summaries, and output-write failures.
+- [x] Add dedicated output tests for stable ordering, repeated values, Unicode, terminal control escaping, binary summaries, and output-write failures.
 - [ ] Expand inspection tests for truncated frame headers, invalid identifiers and sizes, unsupported frame flags, malformed padding, and the tag-size limit. Verify clear failures and unchanged input files.
 - [ ] Validate against additional legally usable MP3 samples and document observed parser limitations. Keep personal audio in the ignored `music/` directory; use generated fixtures for automated tests.
 - [ ] Reconcile the question tracker and technical plan with implementation findings, separating completed decisions from unresolved work.

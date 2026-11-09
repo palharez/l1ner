@@ -41,6 +41,14 @@ go vet ./...
 go build -o bin/l1ner .
 ```
 
+Tests are organized by behavior: `inspect_test.go` uses generated MP3 tag fixtures to exercise reading, validation, and file integrity; `output_test.go` supplies in-memory metadata to check terminal rendering and writer failures directly. Neither suite requires `music/`.
+
+To focus on output behavior while developing:
+
+```sh
+go test -run 'TestDisplay|TestRunOutputFailure' -v ./...
+```
+
 For refactors, preserve existing output, error messages, exit codes, and unchanged input files. Add regression coverage when changing parsing boundaries or fixing a bug. Initial dependency setup may require network access; inspection itself must stay offline.
 
 ## Continuous integration
