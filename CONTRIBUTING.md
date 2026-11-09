@@ -49,6 +49,14 @@ To focus on output behavior while developing:
 go test -run 'TestDisplay|TestRunOutputFailure' -v ./...
 ```
 
+To focus on malformed-input checks, valid padding/nested-data handling, and the 64 MiB boundary:
+
+```sh
+go test -run 'TestMalformedFrames|TestPaddingAndNestedData|TestTagSizeLimit' -v ./...
+```
+
+These inspection tests cover both supported ID3 versions, assert exact stdout/stderr and exit status, and compare file size, permissions, and a whole-file checksum before and after inspection. Size-limit cases use sparse temporary files; no large fixture is committed.
+
 For refactors, preserve existing output, error messages, exit codes, and unchanged input files. Add regression coverage when changing parsing boundaries or fixing a bug. Initial dependency setup may require network access; inspection itself must stay offline.
 
 ## Continuous integration

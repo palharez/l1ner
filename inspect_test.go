@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -129,45 +131,195 @@ func TestArgumentsAndReadErrors(t *testing.T) {
 	}
 }
 
-func TestFrameValidationAndNestedData(t *testing.T) {
-	invalidID := frame(3, "bad!", []byte{0, 'A'})
-	zeroSize := frame(3, "TIT2", nil)
-	overflow := frame(3, "TIT2", []byte{0, 'A'})
-	binary.BigEndian.PutUint32(overflow[4:8], 100)
-	flagged := frame(3, "TIT2", []byte{0, 'A'})
-	flagged[9] = 0x80
-	cases := []struct {
-		name    string
-		body    []byte
-		code    int
-		message string
-	}{
-		{"short frame header", []byte("TIT2"), 1, "frame header: truncated"},
-		{"invalid identifier", invalidID, 1, "malformed ID3 frame identifier"},
-		{"zero size", zeroSize, 1, "malformed TIT2 frame size"},
-		{"oversized frame", overflow, 1, "malformed TIT2 frame size"},
-		{"frame flags", flagged, 1, "unsupported TIT2 frame format flags"},
-		{"invalid padding", []byte{0, 0, 1}, 1, "malformed ID3 padding"},
-		{"valid padding", []byte{0, 0, 0}, 0, "No metadata found"},
-		{"chapter", frame(3, "CHAP", []byte{1, 2, 3}), 0, "CHAP: unparsed data, 3 bytes"},
-		{"chapter contents", frame(3, "CTOC", []byte{1, 2}), 0, "CTOC: unparsed data, 2 bytes"},
-	}
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			data := fixture(3, tt.body)
-			path := save(t, data)
-			var out, errOut bytes.Buffer
-			code := run([]string{"inspect", path}, &out, &errOut)
-			if code != tt.code || !strings.Contains(out.String()+errOut.String(), tt.message) {
-				t.Fatalf("code %d; stdout=%s stderr=%s", code, &out, &errOut)
-			}
-			after, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !bytes.Equal(data, after) {
-				t.Fatal("input changed")
+func TestMalformedFrames(t *testing.T) {
+	for _, version := range []byte{3, 4} {
+		t.Run(fmt.Sprintf("ID3v2.%d", version), func(t *testing.T) {
+			for _, tt := range malformedFrameCases(version) {
+				t.Run(tt.name, func(t *testing.T) {
+					// A valid preceding frame must not produce partial success output.
+					data := fixture(version, frame(version, "TIT2", []byte{0, 'A'}), tt.body)
+					path := save(t, data)
+					assertInspectionOutcome(t, path, 1, "Error: "+tt.message+"\n")
+				})
 			}
 		})
 	}
+}
+
+type malformedFrameCase struct {
+	name    string
+	body    []byte
+	message string
+}
+
+func malformedFrameCases(version byte) []malformedFrameCase {
+	cases := []malformedFrameCase{
+		{"zero size", frame(version, "TIT2", nil), "malformed TIT2 frame size"},
+		{"invalid padding", []byte{0, 0, 1}, "malformed ID3 padding"},
+		{"frame after padding", append([]byte{0, 0}, frame(version, "TIT2", []byte{0, 'B'})...), "malformed ID3 padding"},
+	}
+	complete := frame(version, "TIT2", []byte{0, 'A'})
+	for length := 1; length < 10; length++ {
+		cases = append(cases, malformedFrameCase{
+			name: fmt.Sprintf("truncated header with %d bytes", length),
+			body: complete[:length], message: "malformed ID3 frame header: truncated",
+		})
+	}
+	for _, id := range []string{"tIT2", "TI!2", "TI 2", "TI\x002", "TI\xff2"} {
+		cases = append(cases, malformedFrameCase{
+			name: fmt.Sprintf("invalid identifier %q", id),
+			body: frame(version, id, []byte{0, 'A'}), message: "malformed ID3 frame identifier",
+		})
+	}
+	for _, size := range []uint32{3, 0x0fffffff} {
+		oversized := frame(version, "TIT2", []byte{0, 'A'})
+		binary.BigEndian.PutUint32(oversized[4:8], size)
+		if version == 4 {
+			// Encode independently of the production size helpers.
+			for i := 7; i >= 4; i-- {
+				oversized[i] = byte(size & 127)
+				size >>= 7
+			}
+		}
+		cases = append(cases, malformedFrameCase{
+			name: fmt.Sprintf("frame extends beyond tag %x", oversized[4:8]),
+			body: oversized, message: "malformed TIT2 frame size",
+		})
+	}
+	if version == 4 {
+		for offset := 4; offset < 8; offset++ {
+			invalid := frame(version, "TIT2", []byte{0, 'A'})
+			invalid[offset] |= 0x80
+			cases = append(cases, malformedFrameCase{
+				name: fmt.Sprintf("non-synchsafe size byte %d", offset-4),
+				body: invalid, message: "malformed ID3 synchsafe size",
+			})
+		}
+	}
+	for bit := 0; bit < 8; bit++ {
+		flagged := frame(version, "TIT2", []byte{0, 'A'})
+		flagged[9] = 1 << bit
+		cases = append(cases, malformedFrameCase{
+			name: fmt.Sprintf("unsupported format flag 0x%02x", flagged[9]),
+			body: flagged, message: fmt.Sprintf("unsupported TIT2 frame format flags: 0x%02x", flagged[9]),
+		})
+	}
+	return cases
+}
+
+func TestPaddingAndNestedData(t *testing.T) {
+	for _, version := range []byte{3, 4} {
+		cases := []struct {
+			name string
+			body []byte
+			line string
+		}{
+			{"only padding", []byte{0, 0, 0}, "No metadata found"},
+			{"trailing padding", append(frame(version, "TIT2", []byte{0, 'A'}), 0, 0, 0), "Title [TIT2]: A"},
+			{"chapter", frame(version, "CHAP", []byte{1, 2, 3}), "CHAP: unparsed data, 3 bytes"},
+			{"chapter contents", frame(version, "CTOC", []byte{1, 2}), "CTOC: unparsed data, 2 bytes"},
+		}
+		for _, tt := range cases {
+			t.Run(fmt.Sprintf("ID3v2.%d/%s", version, tt.name), func(t *testing.T) {
+				path := save(t, fixture(version, tt.body))
+				assertInspectionOutcome(t, path, 0, "File: "+path+"\n\n"+tt.line+"\n")
+			})
+		}
+	}
+}
+
+func TestTagSizeLimit(t *testing.T) {
+	// Use the documented 64 MiB boundary independently of maxTagSize.
+	const limit = 64 << 20
+	for _, version := range []byte{3, 4} {
+		for _, bodySize := range []int{limit - 1, limit, limit + 1} {
+			t.Run(fmt.Sprintf("ID3v2.%d/%d bytes", version, bodySize), func(t *testing.T) {
+				path := sparseTag(t, version, bodySize)
+				code := 0
+				want := "File: " + path + "\n\nNo metadata found\n"
+				if bodySize > limit {
+					code = 1
+					want = "Error: ID3 tag exceeds the 64 MiB inspection limit\n"
+				}
+				assertInspectionOutcome(t, path, code, want)
+			})
+		}
+	}
+}
+
+func sparseTag(t *testing.T, version byte, bodySize int) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "large.mp3")
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	header := []byte{'I', 'D', '3', version, 0, 0, 0, 0, 0, 0}
+	size := bodySize
+	for i := 9; i >= 6; i-- {
+		header[i] = byte(size & 127)
+		size >>= 7
+	}
+	if _, err := file.Write(header); err != nil {
+		t.Fatal(err)
+	}
+	// A sparse, zero-filled body exercises real file-size checks without a large fixture allocation.
+	if err := file.Truncate(int64(len(header) + bodySize)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.WriteAt([]byte{0xff, 0xfb, 0x90, 0}, int64(len(header)+bodySize)); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Chmod(0o444); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func assertInspectionOutcome(t *testing.T, path string, wantCode int, wantOutput string) {
+	t.Helper()
+	before := inspectionSnapshot(t, path)
+	var out, errOut bytes.Buffer
+	code := run([]string{"inspect", path}, &out, &errOut)
+	if code != wantCode {
+		t.Errorf("exit code = %d; want %d", code, wantCode)
+	}
+	wantStdout, wantStderr := wantOutput, ""
+	if wantCode != 0 {
+		wantStdout, wantStderr = "", wantOutput
+	}
+	if got := out.String(); got != wantStdout {
+		t.Errorf("stdout = %q; want %q", got, wantStdout)
+	}
+	if got := errOut.String(); got != wantStderr {
+		t.Errorf("stderr = %q; want %q", got, wantStderr)
+	}
+	if after := inspectionSnapshot(t, path); before != after {
+		t.Errorf("input changed: before %+v; after %+v", before, after)
+	}
+}
+
+type fileSnapshot struct {
+	size int64
+	mode os.FileMode
+	sum  [sha256.Size]byte
+}
+
+func inspectionSnapshot(t *testing.T, path string) fileSnapshot {
+	t.Helper()
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		t.Fatal(err)
+	}
+	return fileSnapshot{size: info.Size(), mode: info.Mode(), sum: [sha256.Size]byte(hash.Sum(nil))}
 }
