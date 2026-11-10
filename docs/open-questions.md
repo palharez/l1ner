@@ -2,7 +2,7 @@
 
 **Status:** Inspection decisions implemented; broader product questions remain open.
 
-This tracker accompanies the [product vision](vision.md). Checked items record decisions, and unchecked items track future questions. The Linux-only inspection MVP uses Go and `github.com/bogem/id3v2/v2` for metadata reading. The first external integration is the planned [MusicBrainz lookup](#first-provider--musicbrainz).
+This tracker accompanies the [product vision](vision.md). Checked items record decisions, and unchecked items track future questions. The Linux-only inspection MVP uses Go and `github.com/bogem/id3v2/v2` for metadata reading. The first external integration is [MusicBrainz lookup](#first-provider--musicbrainz).
 
 Use the checklist to track progress. When a question is resolved, record the decision, rationale, and any supporting evidence beneath it before marking it complete.
 
@@ -124,11 +124,13 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 - [x] Which provider and data should the first lookup use?
 
-  **Decision:** A separate, explicitly invoked `lookup` command sends the embedded title and artist of one MP3 to MusicBrainz and displays up to five recording candidates for human review. The file path, audio, and other tags stay local. Keep inspection offline and the music file read-only. See the [implementation checklist](../TODO.md#milestone--musicbrainz-lookup).
+  **Decision:** A separate, explicitly invoked `lookup` command sends the embedded title and artist of one MP3 to MusicBrainz and displays up to five recording candidates for human review. The file path, audio, and other tags stay local. Inspection is offline, and both commands read the music file without modifying it. See the [live results](sample-validation.md#musicbrainz-lookup).
 
 - [x] What are the first provider's access requirements?
 
   **Decision:** Use MusicBrainz public recording search. The hosted API permits free non-commercial use and requires a meaningful `User-Agent` and a maximum of one request per second. Public search requires no API key. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API) · [Rate limiting](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)
+
+  **Implementation:** Lookup sends one request per invocation with a 10-second timeout. A per-user cache marker coordinates the rate limit across local invocations. The marker stores request timing through its modification time.
 
 ### Broader provider questions
 
@@ -162,7 +164,7 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 - [x] What is the current command structure?
 
-  **Implemented:** `l1ner inspect [--recursive] <file-or-directory>`; flags precede the path. Future commands remain undecided.
+  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>` and `l1ner lookup <file.mp3>`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

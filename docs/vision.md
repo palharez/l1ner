@@ -4,7 +4,7 @@
 
 **Status:** First MVP implemented; broader product remains in discovery.
 
-This document defines the product concept, scope, principles, and intended outcomes. The first MVP targets Linux and uses Go, as agreed during discovery. Metadata reading uses `github.com/bogem/id3v2/v2`, as recorded in the [technical plan](technical-plan.md). External APIs remain undecided. Questions for the next phase are tracked in [Open Questions](open-questions.md).
+This document defines the product concept, scope, principles, and intended outcomes. The first MVP targets Linux and uses Go, as agreed during discovery. Metadata reading uses `github.com/bogem/id3v2/v2`, as recorded in the [technical plan](technical-plan.md). MusicBrainz provides the first recording lookup. Questions for the next phase are tracked in [Open Questions](open-questions.md).
 
 ## 1. Overview
 
@@ -197,6 +197,10 @@ Following completion of the first MVP, read-only inspection also accepts directo
 ### Implemented Extension — JSON Output
 
 An optional `--json` flag emits one machine-readable report for file or directory inspection. It includes per-file results/errors, scan errors, and summary counts. Repeated metadata remains an array, and binary payloads are summarized. Users may save stdout through shell redirection; the CLI does not select a storage location. Text output remains the default. See the [report format](json-output.md).
+
+### Implemented Extension — MusicBrainz Lookup
+
+Users can explicitly search MusicBrainz for one MP3 using its embedded title and artist. l1ner shows recording candidates for human review. Exact release selection, fingerprinting, and metadata writing are future work. See the [lookup usage](../README.md#musicbrainz-lookup).
 
 ## 8. Success Criteria
 

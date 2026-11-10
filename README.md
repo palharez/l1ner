@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** Read-only MP3 inspection supports individual files and directories.
+**Status:** Offline MP3 inspection supports files and directories. An opt-in MusicBrainz lookup searches for recording candidates for one MP3.
 
 ## First MVP
 
@@ -18,7 +18,7 @@ Read existing metadata from a local MP3 file or directory and display it in the 
 - Reports unreadable files and unsupported tag versions clearly.
 - Leaves the file unchanged and performs no network lookups.
 
-Directory scanning and optional JSON output extend the original single-file MVP. Identification, external services, and metadata editing remain deferred.
+Directory scanning and optional JSON output extend the original single-file MVP. MusicBrainz lookup is a separate command for reviewing possible recordings.
 
 ## Usage
 
@@ -86,6 +86,18 @@ Artwork [APIC]: image/jpeg, 125000 bytes; picture type 3; description: Front cov
 Title [TIT2]: Example Song
 Artist [TPE1]: Example Artist
 ```
+
+### MusicBrainz lookup
+
+```sh
+./bin/l1ner lookup music/song.mp3
+```
+
+`lookup` uses the embedded title (`TIT2`) and artist (`TPE1`) as the only file data in an HTTPS search to MusicBrainz. Missing or conflicting values stop the lookup before a request. Use `inspect` for offline reads. Public search requires no API key and is free for non-commercial use. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API)
+
+The command displays up to five recording candidates in MusicBrainz order, including title, artist credit, and recording ID. Review candidates before treating any as a match. The catalog can offer several recordings with the same title and artist. See the [live validation results](docs/sample-validation.md#musicbrainz-lookup).
+
+A completed search exits `0`, including when it returns zero candidates. Input, service, and output errors exit `1`. Invalid arguments exit `2`. The request times out after 10 seconds. Concurrent lookups that reach the local limit report an error. l1ner uses a one-byte rate marker at `$XDG_CACHE_HOME/l1ner/musicbrainz-rate`, defaulting to `$HOME/.cache/l1ner/musicbrainz-rate`, to coordinate the [MusicBrainz rate limit](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting) across invocations. Search terms and results are held in memory, and the MP3 is opened read-only.
 
 ## Development
 
