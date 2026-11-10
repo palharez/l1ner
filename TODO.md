@@ -36,11 +36,21 @@ The implemented CLI inspects local MP3 files and directories on Linux, read-only
 
 Batch lookup, fingerprinting, release selection, and metadata writing are future milestones.
 
+## Milestone — Interactive song preview
+
+**Branch** `milestone/interactive-preview`. The first MusicBrainz lookup is accepted. This milestone moves from finding candidates to reviewing a proposed change for one song.
+
+**Proposed scope** `l1ner preview <file.mp3>` opens a keyboard-driven review in the terminal. Use the existing MusicBrainz search, pick a recording, and compare its title and artist credit with the MP3's tags. Accept, skip, or quit the preview with the file opened read-only. See the [proposed review flow](docs/open-questions.md#interactive-song-review).
+
+1. [ ] **Build the song proposal.** Use the selected recording ID and the existing title and artist to show current and proposed values. Flag changed values and show a clear outcome when both tags already agree. Test changed and unchanged tags with generated fixtures. Commit as `feat(preview): compare current and proposed song tags`.
+2. [ ] **Add the interactive review.** Validate that input and output are terminals before searching. Reuse the existing search and rate limit. Show candidate IDs and available version details, then present the proposal and review choices. Verify selection, changing candidates, accepting, skipping, quitting, and cancellation. Commit as `feat(preview): add interactive song review`.
+3. [ ] **Verify and document the milestone.** Test the command with generated MP3s and a local MusicBrainz server, including missing or conflicting tags, no candidates, service errors, no changes, and unchanged file bytes. Run the [Go checks](CONTRIBUTING.md#verification) and try the wizard in a real Linux terminal. Document usage and open a PR for user review. Commit as `docs(preview): document and validate song review`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
 - [ ] Evaluate recording retrieval across a broader sample and research additional metadata services using `docs/open-questions.md`.
-- [ ] Design per-song review and acceptance of proposed changes before adding metadata writing. Clarify skipping/rejection, batch navigation, and integrity/recovery behavior.
+- [ ] Extend the per-song review to directories. Agree on batch navigation, resuming reviews, and integrity/recovery before adding metadata writing.
 - [ ] Consider packaging and other operating systems when local Linux usage is established.
 - [ ] Revisit `cmd/l1ner/` and `internal/` packages when additional commands or responsibilities justify them. Keep the current layout for the single-command MVP.
 
