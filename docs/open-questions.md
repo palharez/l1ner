@@ -89,7 +89,7 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 **Accepted starting point.** The first MusicBrainz lookup is accepted as shipped. The next step is to let a listener choose a candidate and see how it would change the MP3's tags.
 
-**Proposed one-song flow.** Use `l1ner preview <file.mp3>` in a terminal. The command uses the existing lookup's title and artist query and lets the user move with the arrow keys and choose with Enter. Show the recording title, credited artist, recording ID, and any disambiguation or duration supplied by MusicBrainz. Show the exact file path and compare the current and proposed title and artist after the user selects a recording.
+**Implemented one-song flow.** Use `l1ner preview <file.mp3>` in a terminal. The command uses the existing lookup's title and artist query and lets the user move with the arrow keys and choose with Enter. It shows the recording title, credited artist, recording ID, and any disambiguation or duration supplied by MusicBrainz. After selection it shows the file path and compares the current and proposed title and artist. See the [live terminal check](sample-validation.md#interactive-preview).
 
 ```text
 $ l1ner preview music/song.mp3
@@ -195,7 +195,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>` and `l1ner lookup <file.mp3>`. Flags precede the path.
+  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, and `l1ner preview <file.mp3>`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.
