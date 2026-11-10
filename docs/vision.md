@@ -212,7 +212,7 @@ The terminal wizard lets the listener choose a recording and review the proposed
 
 ### Implemented Extension — Audio Identification
 
-Listeners can look up one MP3 by sound, including files with missing or incorrect tags. l1ner generates a fingerprint locally and sends it with the duration to AcoustID. The command lists linked recording candidates for review and leaves the file intact. See the [identification workflow](../README.md#identify-a-song-from-audio).
+Listeners can look up one MP3 by sound, including files with missing or incorrect tags. l1ner generates a fingerprint locally and sends it with the duration to AcoustID. Listeners can also use an audio match to preview the title and artist or explicitly approve adding or replacing those tags. See the [audio-assisted workflow](../README.md#preview-or-fix-one-song-from-audio).
 
 ## 8. Success Criteria
 

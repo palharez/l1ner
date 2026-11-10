@@ -34,12 +34,32 @@ type Candidate struct {
 
 // Search fingerprints the MP3 locally and sends the fingerprint and duration to AcoustID.
 func Search(ctx context.Context, path, applicationKey string) ([]Candidate, error) {
+	client, err := localAcoustIDClient()
+	if err != nil {
+		return nil, err
+	}
+	return client.identify(ctx, path, applicationKey)
+}
+
+// SearchFile fingerprints the open file so replacing its path cannot change the audio being reviewed.
+func SearchFile(ctx context.Context, file *os.File, applicationKey string) ([]Candidate, error) {
+	client, err := localAcoustIDClient()
+	if err != nil {
+		return nil, err
+	}
+	sample, err := runFPCalc(ctx, "/proc/self/fd/3", file)
+	if err != nil {
+		return nil, err
+	}
+	return client.lookup(ctx, sample, applicationKey)
+}
+
+func localAcoustIDClient() (acoustIDClient, error) {
 	cache, err := os.UserCacheDir()
 	if err != nil {
-		return nil, fmt.Errorf("find AcoustID rate limit directory: %w", err)
+		return acoustIDClient{}, fmt.Errorf("find AcoustID rate limit directory: %w", err)
 	}
-	client := acoustIDClient{endpoint: acoustIDEndpoint, rateFile: filepath.Join(cache, "l1ner", "acoustid-rate")}
-	return client.identify(ctx, path, applicationKey)
+	return acoustIDClient{endpoint: acoustIDEndpoint, rateFile: filepath.Join(cache, "l1ner", "acoustid-rate")}, nil
 }
 
 type acoustIDClient struct {

@@ -15,7 +15,7 @@ import (
 	"golang.org/x/term"
 )
 
-const previewSyntax = "l1ner preview <file.mp3>"
+const previewSyntax = "l1ner preview [--from-audio] <file.mp3>"
 
 type menuSelector func(ctx context.Context, question string, options []menuOption, selected int) (int, error)
 
@@ -40,18 +40,18 @@ type songReview struct {
 	proposal songProposal
 }
 
-func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search recordingSearch) int {
+func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search recordingSearch, audio audioCandidateSearch) int {
 	syntax := previewSyntax
-	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change."
+	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change.\nUse --from-audio to search AcoustID instead. See 'l1ner identify --help' for setup."
 	canceled := "Preview canceled."
 	reviewFile := previewFile
 	if command == "fix" {
 		syntax = fixSyntax
-		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory."
+		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory.\nUse --from-audio for one MP3. See 'l1ner identify --help' for AcoustID setup."
 		canceled = "Fix canceled."
 		reviewFile = fixFile
 	}
-	path, err := parseSongPath(command, args)
+	path, fromAudio, err := parseSongPath(command, args)
 	if errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(out, "Usage: "+syntax)
 		fmt.Fprintln(out, help)
@@ -60,6 +60,15 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 	if err != nil {
 		reportError(errOut, err)
 		fmt.Fprintln(errOut, "Usage: "+syntax)
+		return 2
+	}
+	isDirectory := false
+	if command == "fix" || fromAudio {
+		info, err := os.Stat(path)
+		isDirectory = err == nil && info.IsDir()
+	}
+	if fromAudio && isDirectory {
+		reportError(errOut, errors.New("--from-audio requires one MP3 file"))
 		return 2
 	}
 	input, inputIsFile := in.(*os.File)
@@ -75,12 +84,15 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		}
 		return choice, err
 	}
-	if command == "fix" {
-		if info, err := os.Stat(path); err == nil && info.IsDir() {
-			return runFixDirectory(path, out, errOut, search, choose)
-		}
+	if isDirectory {
+		return runFixDirectory(path, out, errOut, search, choose)
 	}
-	if err := reviewFile(path, out, search, choose); err != nil {
+	if fromAudio {
+		err = reviewFileFromAudio(command, path, out, audio, choose)
+	} else {
+		err = reviewFile(path, out, search, choose)
+	}
+	if err != nil {
 		if errors.Is(err, errPreviewCanceled) {
 			if err == errPreviewCanceled {
 				fmt.Fprintln(errOut, canceled)
@@ -101,6 +113,10 @@ func previewFile(path string, out io.Writer, search recordingSearch, choose menu
 		return err
 	}
 	review, err := searchAndReview(context.Background(), out, path, tags, search, choose, "Accept proposal (preview only)")
+	return finishPreview(out, review, err)
+}
+
+func finishPreview(out io.Writer, review songReview, err error) error {
 	if err != nil {
 		return err
 	}
@@ -180,6 +196,9 @@ func recordingOptions(matches []recording) []menuOption {
 	for i, match := range matches {
 		label := fmt.Sprintf("%d. %s — %s", i+1, safe(match.title), safe(match.artist))
 		details := []string{"Recording ID: " + safe(match.id)}
+		if match.acoustIDScore != nil {
+			details = append(details, fmt.Sprintf("AcoustID score: %.4f", *match.acoustIDScore))
+		}
 		if match.disambiguation != "" {
 			details = append(details, "Version: "+safe(match.disambiguation))
 		}
@@ -203,6 +222,9 @@ type tagComparison struct {
 }
 
 func (tag tagComparison) changed() bool {
+	if len(tag.current) == 0 {
+		return tag.proposed != ""
+	}
 	return slices.ContainsFunc(tag.current, func(value string) bool { return value != tag.proposed })
 }
 
@@ -244,5 +266,10 @@ func writeTagComparison(out io.Writer, label string, tag tagComparison) {
 	if tag.changed() {
 		status = "changed"
 	}
-	fmt.Fprintf(out, "%s\t%s\t%q\t%s\n", label, strings.Join(values, ", "), tag.proposed, status)
+	current := strings.Join(values, ", ")
+	if len(values) == 0 {
+		current = "(missing)"
+		status = "added"
+	}
+	fmt.Fprintf(out, "%s\t%s\t%q\t%s\n", label, current, tag.proposed, status)
 }

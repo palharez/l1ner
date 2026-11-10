@@ -76,7 +76,7 @@ func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search
 		if _, err := fmt.Fprintf(out, "\nSong %d of %d\n", i+1, len(paths)); err != nil {
 			return summary, err
 		}
-		decision, err := fixSong(ctx, path, out, search, choose)
+		decision, err := fixSong(ctx, path, out, search, nil, choose)
 		if err == nil {
 			if decision == reviewQuit {
 				_, err := fmt.Fprintln(out, "Review ended.")

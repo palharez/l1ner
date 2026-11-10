@@ -22,7 +22,7 @@ func saveFixFixture(t *testing.T) (string, []byte) {
 func TestFixReplacesOnlyApprovedTagsAndBacksUp(t *testing.T) {
 	path, original := saveFixFixture(t)
 	before := inspectionSnapshot(t, path)
-	target, err := openFixTarget(path)
+	target, err := openFixTarget(path, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestFixHandlesConcurrentChanges(t *testing.T) {
 	for _, change := range []string{"backup collision", "original edit"} {
 		t.Run(change, func(t *testing.T) {
 			path, original := saveFixFixture(t)
-			target, err := openFixTarget(path)
+			target, err := openFixTarget(path, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -105,7 +105,7 @@ func TestFixHandlesConcurrentChanges(t *testing.T) {
 
 func TestFixRenameFailureKeepsOriginalAndBackup(t *testing.T) {
 	path, original := saveFixFixture(t)
-	target, err := openFixTarget(path)
+	target, err := openFixTarget(path, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,13 +152,13 @@ func TestFixRejectsUnsafeFileLayouts(t *testing.T) {
 					t.Fatal(err)
 				}
 			case "locked":
-				target, err := openFixTarget(path)
+				target, err := openFixTarget(path, false)
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer target.close()
 			}
-			if target, err := openFixTarget(path); err == nil {
+			if target, err := openFixTarget(path, false); err == nil {
 				target.close()
 				t.Errorf("opened %s MP3 for editing", layout)
 			}

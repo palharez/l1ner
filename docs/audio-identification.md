@@ -1,6 +1,6 @@
 # Optional audio identification
 
-Use `l1ner identify` to find one MP3 by sound, even if its title and artist are missing or wrong. AcoustID setup is only needed for this command. `inspect` works offline, and `lookup`, `preview`, and `fix` use MusicBrainz's tag-based search without an AcoustID key. Setting the key makes it available to `identify`. Running the command is what starts the lookup.
+Use `l1ner identify` to find one MP3 by sound, even if its title and artist are missing or wrong. Add `--from-audio` to `preview` or `fix` to use those matches in a single-song review. `inspect` works offline, and the tag-based forms of `lookup`, `preview`, and `fix` work without AcoustID setup. Only an explicit audio lookup sends a fingerprint.
 
 ## How AcoustID works
 
@@ -25,7 +25,18 @@ Chromaprint's `fpcalc` reads the MP3 locally and produces a fingerprint, a compa
 
 ## Read the results
 
-Each candidate shows a title, artist, MusicBrainz recording ID, and AcoustID score. Distinct recordings remain separate. Repeated hits for the same recording keep their highest score. The score ranks fingerprint hits, and several recordings can share a score. Review the candidates before using their metadata. The command leaves the MP3 byte for byte as it was. [Live validation](sample-validation.md#audio-identification)
+Each candidate shows a title, artist, MusicBrainz recording ID, and AcoustID score. Distinct recordings remain separate. Repeated hits for the same recording keep their highest score. The score ranks fingerprint hits, and several recordings can share a score. Review the candidates before using their metadata. `identify` leaves the MP3 byte for byte as it was. [Live validation](sample-validation.md#audio-identification)
+
+## Review and repair a song
+
+```sh
+./bin/l1ner preview --from-audio music/song.mp3
+./bin/l1ner fix --from-audio music/song.mp3
+```
+
+The picker offers linked recordings with both a title and an artist. Select one to compare the proposed values with the file's current tags. A missing field is marked **(missing)**. In preview, accepting records your decision for that run. In fix, select **Apply changes to this MP3** to write the approved title and artist. Skip is the default. Apply preserves the audio and saves an exact backup. See the [fix and recovery instructions](../README.md#fix-one-song).
+
+Audio-assisted review accepts an untagged MP3 or one with supported ID3v2 metadata. Legacy-only ID3v1, malformed tags, and unsupported tag features still produce errors. `--from-audio` accepts one MP3.
 
 ## Troubleshooting
 

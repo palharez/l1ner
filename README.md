@@ -101,7 +101,7 @@ A completed search exits `0`, including when it returns zero candidates. Input, 
 
 ### Identify a song from audio
 
-`identify` is an opt-in way to find a recording by sound when its tags are missing or wrong. Only this command needs Chromaprint's `fpcalc` and an AcoustID application key. Use the [audio identification guide](docs/audio-identification.md) to install `fpcalc`, create the right key, and set `L1NER_ACOUSTID_KEY` in your shell.
+`identify` is an opt-in way to find a recording by sound when its tags are missing or wrong. Audio lookup requires Chromaprint's `fpcalc` and an AcoustID application key. Use the [audio identification guide](docs/audio-identification.md) to install `fpcalc`, create the right key, and set `L1NER_ACOUSTID_KEY` in your shell.
 
 ```sh
 ./bin/l1ner identify music/song.mp3
@@ -129,7 +129,7 @@ A completed review or a search with no candidates exits `0`. Missing or conflict
 
 `fix` opens the same MusicBrainz review and uses the MP3's current title and artist for the search. Choose **Apply changes to this MP3** to write the displayed title and artist. **Skip song** is highlighted by default. The command verifies the edited tags, audio and trailing bytes, then saves a byte-for-byte backup as `music/song.mp3.l1ner.bak` before replacing the MP3. The source directory must support hard links, rename, and directory sync.
 
-Fixing requires a regular, writable MP3 you own, with one hard link, an existing title and artist, and a supported ID3v2.3.0 or ID3v2.4.0 tag. It refuses symlinks, extended file attributes, protected frames, and an existing backup. Close other editors for the file while applying a fix. See the [write constraints](docs/technical-plan.md#single-song-fix).
+Fixing requires a regular, writable MP3 you own, with one hard link. Tag-based search also needs an existing title and artist in a supported ID3v2.3.0 or ID3v2.4.0 tag. Fix refuses symlinks, extended file attributes, protected frames, and an existing backup. Close other editors for the file while applying a fix. See the [write constraints](docs/technical-plan.md#single-song-fix).
 
 To restore the original bytes, confirm the overwrite when prompted and then inspect the restored file. This moves the backup into place.
 
@@ -139,6 +139,17 @@ mv -i -- music/song.mp3.l1ner.bak music/song.mp3
 ```
 
 Apply, Skip, Quit, and a review with no changes or candidates exit `0`. Input, service, verification, and write failures exit `1`. Invalid arguments exit `2`, and cancellation before replacement exits `130`. If a failure occurs after the backup is published, the backup path is included in the diagnostic.
+
+### Preview or fix one song from audio
+
+```sh
+./bin/l1ner preview --from-audio music/song.mp3
+./bin/l1ner fix --from-audio music/song.mp3
+```
+
+Use `--from-audio` when the MP3's title or artist is missing or wrong. After [optional AcoustID setup](docs/audio-identification.md#set-up-on-linux), choose a recording in the same keyboard picker. Its details show the AcoustID score. The proposal shows absent fields as **(missing)** and displays the title and artist to add or replace. Preview stays read-only.
+
+In `fix`, **Apply changes to this MP3** writes the approved fields and saves the exact original as `.l1ner.bak`. A tagless MP3 gets an ID3v2.4 tag. An existing supported ID3v2 tag keeps its version and unrelated frames. The same file safety and recovery rules apply. The flag accepts one MP3, and the standard tag-based commands work without AcoustID setup.
 
 ### Fix a folder
 

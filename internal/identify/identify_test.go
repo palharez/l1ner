@@ -21,6 +21,33 @@ func stubFPCalc(t *testing.T, script string) {
 	t.Setenv("PATH", bin)
 }
 
+func TestFPCalcUsesOpenedFile(t *testing.T) {
+	stubFPCalc(t, `
+IFS= read -r value < "$4"
+test "$value" = original
+printf '%s\n' '{"duration":5,"fingerprint":"original-audio"}'
+`)
+	path := filepath.Join(t.TempDir(), "song.mp3")
+	if err := os.WriteFile(path, []byte("original\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if err := os.Rename(path, path+".old"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("replacement\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := runFPCalc(t.Context(), "/proc/self/fd/3", file)
+	if err != nil || got.text != "original-audio" {
+		t.Errorf("fingerprint = %+v, error = %v", got, err)
+	}
+}
+
 func TestIdentifySendsFingerprintOnlyAndKeepsAmbiguity(t *testing.T) {
 	stubFPCalc(t, `
 test "$#" -eq 4
