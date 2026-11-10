@@ -15,7 +15,19 @@ import (
 
 var errPreviewCanceled = errors.New("preview canceled")
 
-func selectTerminalMenu(in, out *os.File, question string, options []string, selected int) (choice int, err error) {
+type menuOption struct {
+	label   string
+	details []string
+}
+
+func selectTerminalMenu(in, out *os.File, question string, options []menuOption, selected int) (choice int, err error) {
+	width, height, _ := term.GetSize(int(out.Fd()))
+	if width == 0 || height == 0 {
+		width, height = 80, 24
+	}
+	if width < 20 || height < 4 {
+		return 0, errors.New("terminal is too small to display the menu")
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, unix.SIGTERM)
 	defer stop()
 	fd := int(in.Fd())
@@ -29,25 +41,28 @@ func selectTerminalMenu(in, out *os.File, question string, options []string, sel
 		}
 	}()
 
-	width, height, _ := term.GetSize(int(out.Fd()))
-	if width == 0 || height == 0 {
-		width, height = 80, 24
-	}
-	rows := min(len(options), max(1, height-2))
-	if _, err := fmt.Fprintf(out, "\r\n%s\r\n", fitMenuLine("? "+question+"  (↑/↓, Enter)", width)); err != nil {
+	color := os.Getenv("NO_COLOR") == "" && os.Getenv("TERM") != "dumb"
+	if _, err := io.WriteString(out, "\r\n"); err != nil {
 		return 0, err
 	}
-	for redraw := false; ; redraw = true {
-		if err := drawMenu(out, options, selected, width, rows, redraw); err != nil {
+	rows := 0
+	for {
+		lines := menuLines(question, options, selected, width, height, color)
+		if err := replaceMenu(out, rows, lines); err != nil {
 			return 0, err
 		}
+		rows = len(lines)
 		key, err := readMenuKey(ctx, fd)
 		if err != nil {
+			if clearErr := replaceMenu(out, rows, nil); clearErr != nil {
+				return 0, errors.Join(err, clearErr)
+			}
 			return 0, err
 		}
 		switch key {
 		case '\r':
-			return selected, nil
+			answer := clipMenuLine("✓ "+options[selected].label, width)
+			return selected, replaceMenu(out, rows, []string{answer})
 		case 'A':
 			selected = (selected + len(options) - 1) % len(options)
 		case 'B':
@@ -56,21 +71,69 @@ func selectTerminalMenu(in, out *os.File, question string, options []string, sel
 	}
 }
 
-func drawMenu(out io.Writer, options []string, selected, width, rows int, redraw bool) error {
-	var text strings.Builder
-	if redraw {
-		fmt.Fprintf(&text, "\x1b[%dA", rows)
-	}
-	first := max(0, selected-rows+1)
+func menuLines(question string, options []menuOption, selected, width, height int, color bool) []string {
+	lines := []string{clipMenuLine("? "+question+"  (↑/↓, Enter)", width)}
+	details := wrapMenuDetails(options[selected].details, width, min(4, max(0, height-3)))
+	rows := min(len(options), max(1, height-2-len(details)))
+	first := min(max(0, selected-rows/2), len(options)-rows)
 	for i := first; i < first+rows; i++ {
-		prefix := "  "
-		if i == selected {
-			prefix = "❯ "
+		if i != selected {
+			lines = append(lines, clipMenuLine("  "+options[i].label, width))
+			continue
 		}
-		fmt.Fprintf(&text, "\r\x1b[2K%s\r\n", fitMenuLine(prefix+options[i], width))
+		line := clipMenuLine("❯ "+options[i].label, width)
+		if color {
+			line = "\x1b[36m" + line + "\x1b[0m"
+		}
+		lines = append(lines, line)
+		lines = append(lines, details...)
+	}
+	return lines
+}
+
+func wrapMenuDetails(details []string, width, maxRows int) []string {
+	const indent = "    "
+	var lines []string
+	for _, detail := range details {
+		for detail != "" && len(lines) < maxRows {
+			part := fitMenuLine(detail, width-len(indent))
+			if part == "" {
+				return lines
+			}
+			if len(part) < len(detail) {
+				if len(lines)+1 == maxRows {
+					return append(lines, clipMenuLine(indent+detail, width))
+				}
+				if space := strings.LastIndexByte(part, ' '); space > 0 {
+					part = part[:space]
+				}
+			}
+			lines = append(lines, indent+part)
+			detail = strings.TrimLeft(detail[len(part):], " ")
+		}
+	}
+	return lines
+}
+
+func replaceMenu(out io.Writer, rows int, lines []string) error {
+	var text strings.Builder
+	if rows > 0 {
+		// The cursor sits one row below the prompt, so erase exactly from its start.
+		fmt.Fprintf(&text, "\x1b[%dA\r\x1b[J", rows)
+	}
+	for _, line := range lines {
+		text.WriteString(line)
+		text.WriteString("\r\n")
 	}
 	_, err := io.WriteString(out, text.String())
 	return err
+}
+
+func clipMenuLine(text string, width int) string {
+	if line := fitMenuLine(text, width); len(line) == len(text) || width < 5 {
+		return line
+	}
+	return fitMenuLine(text, width-3) + "..."
 }
 
 func fitMenuLine(text string, width int) string {

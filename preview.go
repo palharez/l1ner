@@ -16,7 +16,7 @@ import (
 
 const previewSyntax = "l1ner preview <file.mp3>"
 
-type menuSelector func(question string, options []string, selected int) (int, error)
+type menuSelector func(question string, options []menuOption, selected int) (int, error)
 
 type reviewDecision int
 
@@ -62,7 +62,7 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		reportError(errOut, fmt.Errorf("%s requires a terminal for input and output", command))
 		return 1
 	}
-	choose := func(question string, options []string, selected int) (int, error) {
+	choose := func(question string, options []menuOption, selected int) (int, error) {
 		return selectTerminalMenu(input, output, question, options, selected)
 	}
 	if err := reviewFile(path, out, search, choose); err != nil {
@@ -114,19 +114,20 @@ func searchAndReview(out io.Writer, path string, tags songTags, search func(titl
 }
 
 func reviewSong(out io.Writer, path string, tags songTags, matches []recording, choose menuSelector, applyLabel string) (songReview, error) {
-	options, err := displayPreviewCandidates(out, path, matches)
-	if err != nil {
+	if _, err := fmt.Fprintf(out, "File: %s\n", safe(path)); err != nil {
 		return songReview{}, err
 	}
-	options = append(options, "Skip song", "Quit")
-	actions := []string{
-		reviewSkip:        "Skip song",
-		reviewAccept:      applyLabel,
-		reviewChooseAgain: "Choose another recording",
-		reviewQuit:        "Quit",
+	options := recordingOptions(matches)
+	options = append(options, menuOption{label: "Skip song"}, menuOption{label: "Quit"})
+	actions := []menuOption{
+		reviewSkip:        {label: "Skip song"},
+		reviewAccept:      {label: applyLabel},
+		reviewChooseAgain: {label: "Choose another recording"},
+		reviewQuit:        {label: "Quit"},
 	}
 	selected := 0
 	for {
+		var err error
 		selected, err = choose("Choose a recording", options, selected)
 		if err != nil {
 			return songReview{}, err
@@ -154,24 +155,21 @@ func reviewSong(out io.Writer, path string, tags songTags, matches []recording, 
 	}
 }
 
-func displayPreviewCandidates(out io.Writer, path string, matches []recording) ([]string, error) {
-	var text strings.Builder
-	fmt.Fprintf(&text, "File: %s\nMusicBrainz recording candidates:\n", safe(path))
-	options := make([]string, 0, len(matches))
+func recordingOptions(matches []recording) []menuOption {
+	options := make([]menuOption, 0, len(matches)+2)
 	for i, match := range matches {
 		label := fmt.Sprintf("%d. %s — %s", i+1, safe(match.title), safe(match.artist))
+		details := []string{"Recording ID: " + safe(match.id)}
 		if match.disambiguation != "" {
-			label += " · " + safe(match.disambiguation)
+			details = append(details, "Version: "+safe(match.disambiguation))
 		}
 		if match.lengthMS > 0 {
 			seconds := match.lengthMS / 1000
 			label += fmt.Sprintf(" · %d:%02d", seconds/60, seconds%60)
 		}
-		options = append(options, label)
-		fmt.Fprintf(&text, "%s\n   Recording ID: %s\n", label, safe(match.id))
+		options = append(options, menuOption{label: label, details: details})
 	}
-	_, err := io.WriteString(out, text.String())
-	return options, err
+	return options
 }
 
 type songProposal struct {

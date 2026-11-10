@@ -89,16 +89,20 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 **Accepted starting point.** The first MusicBrainz lookup is accepted as shipped. The next step is to let a listener choose a candidate and see how it would change the MP3's tags.
 
-**Implemented one-song flow.** Use `l1ner preview <file.mp3>` in a terminal. The command uses the existing lookup's title and artist query and lets the user move with the arrow keys and choose with Enter. It shows the recording title, credited artist, recording ID, and any disambiguation or duration supplied by MusicBrainz. After selection it shows the file path and compares the current and proposed title and artist. See the [live terminal check](sample-validation.md#interactive-preview).
+**Implemented one-song flow.** Use `l1ner preview <file.mp3>` in a terminal. The command uses the existing lookup's title and artist query. The picker shows the title, credited artist, and available duration for each option. Arrow keys move focus and reveal that recording's ID and version description. Enter leaves a one-line confirmation and shows the file path and comparison. The same picker drives `fix`. See the [live terminal check](sample-validation.md#interactive-preview).
 
 ```text
 $ l1ner preview music/song.mp3
 
 ? Choose a recording  (↑/↓, Enter)
-❯ Example Song — Example Artist  ·  live, 2:27
-  Example Song — Example Artist  ·  studio, 2:19
+❯ 1. Example Song — Example Artist · 2:27
+    Recording ID: 01234567-89ab-4cde-8f01-23456789abcd
+    Version: live
+  2. Example Song — Example Artist · 2:19
   Skip song
   Quit
+
+✓ 1. Example Song — Example Artist · 2:27
 
 File       music/song.mp3
 Field      Current          Proposed
