@@ -1,6 +1,6 @@
 # Contributing to l1ner
 
-The CLI inspects existing metadata in local MP3 files on Linux, including directory batches as an extension to the original single-file MVP. Start with the [README](README.md), [product vision](docs/vision.md), and [technical plan](docs/technical-plan.md). Upcoming work is tracked in [TODO.md](TODO.md).
+The CLI inspects local MP3 metadata on Linux and offers a separate MusicBrainz lookup for one file. Start with the [README](README.md), [product vision](docs/vision.md), and [technical plan](docs/technical-plan.md). Upcoming work is tracked in [TODO.md](TODO.md).
 
 ## Development setup
 
@@ -43,6 +43,8 @@ go build -o bin/l1ner .
 
 Tests are organized by behavior: `inspect_test.go` uses generated MP3 tag fixtures to exercise reading, validation, and file integrity; `output_test.go` supplies in-memory metadata to check terminal rendering and writer failures directly. `batch_test.go` exercises directory traversal, filtering, recursion, summaries, failure continuation, and file integrity using temporary directories. `json_test.go` checks the public JSON format, single/batch results, partial failures, data fidelity, and write errors. No suite requires `music/`.
 
+`lookup_test.go` uses generated tags to check extraction, CLI behavior, and file integrity. `musicbrainz_test.go` uses a local HTTP server to check request encoding, the rate limit, and provider responses. The [live sample checks](docs/sample-validation.md#musicbrainz-lookup) are manual.
+
 To focus on output behavior while developing:
 
 ```sh
@@ -82,3 +84,24 @@ For bugs, describe the command, expected and actual behavior, Go version, and re
 For feature proposals, describe the user need and acceptance criteria before expanding the MVP scope. Consult [Open Questions](docs/open-questions.md) for deferred decisions.
 
 Keep pull requests focused. Explain the problem, the resulting behavior, and the checks performed. Include documentation updates when behavior or limitations change.
+
+## Commit messages
+
+Use [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) for new commits. Write the subject as `type(scope): summary` with an optional scope and a short, imperative summary. Use `feat` for a new capability, `fix` for a bug fix, `docs` for documentation, `test` for test-only work, `refactor` for restructuring that preserves behavior, `ci` for workflow changes, and `chore` for other maintenance.
+
+```text
+feat(lookup): add single-file lookup command
+fix(id3): reject oversized frame sizes
+test: fuzz tag parsing
+docs(contributing): adopt Conventional Commits
+```
+
+Use the body to explain the reason for a change when the subject needs context. Mark breaking changes with `!` or a `BREAKING CHANGE:` footer as specified by the convention.
+
+## Feature workflow
+
+1. **Read the project context.** Check `git status --short --branch` first. Read [AGENTS.md](AGENTS.md), this guide, the [README](README.md), [TODO.md](TODO.md), and the relevant `docs/` pages. Preserve existing edits and check the branch history before choosing a base.
+2. **Agree on the milestone.** Define the user-facing behavior, data boundaries, and acceptance criteria before implementing. Record decisions in [Open Questions](docs/open-questions.md). Break the work into ordered tasks in [TODO.md](TODO.md), each with a verification step and a commit boundary.
+3. **Work on a milestone branch.** Use the branch name agreed with the user and the repository's default branch as the base. For each task, make the smallest complete change, run its checks, inspect the diff, and commit the task's files together using the [commit convention](#commit-messages). Keep each commit buildable and leave unrelated work out of it.
+4. **Verify the complete workflow.** Exercise the feature through its normal entry point and run the checks in [Verification](#verification) for Go changes. Update usage docs, record any manual validation, and check off tasks as they pass. For external integrations, use a local test server in automated tests and record live checks separately.
+5. **Open a pull request.** Push the verified milestone branch and use `gh pr create` with `main` as the base. Include the feature summary, check results, and any limitations or open decisions. Share the PR link so the user can review and merge it.

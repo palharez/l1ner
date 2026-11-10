@@ -122,4 +122,10 @@ The report schema and failure behavior are documented in [JSON output](json-outp
 
 Generated tests cover single files, shallow/recursive directories, mixed success/failure, empty scans, missing/malformed input, scan errors, writer failures, typed metadata, Unicode/control escaping, repeated values, and unchanged files. Existing text-mode regression tests remain in place.
 
-Packaging, distribution, metadata writing, additional tag formats, and external services remain deferred.
+## MusicBrainz Lookup Extension
+
+`lookup.go` reuses the inspector to extract one unambiguous title and artist, then renders the recording candidates as escaped terminal text. `musicbrainz.go` makes one bounded HTTPS request with Go's standard HTTP and JSON libraries. It keeps candidates in service order and caps the list at five. A Linux file lock and the marker's modification time coordinate the request limit across invocations that use the same user cache.
+
+Tests exercise the command with generated MP3s and a local HTTP server. The [sample-validation notes](sample-validation.md#musicbrainz-lookup) record the live catalog results and limits.
+
+Packaging, distribution, metadata writing, and additional tag formats remain deferred.

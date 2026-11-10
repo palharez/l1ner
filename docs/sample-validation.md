@@ -20,9 +20,22 @@ Each result included a title, artist, album, and track number. “My Home Town�
 
 The raw report spanned 731 lines. For per-song review, the tagged title, artist, album, track number, and file path provide a compact starting view. The album field gives context to the track number, and the file path identifies the exact input even when the filename differs from the tagged title.
 
+## MusicBrainz lookup
+
+On 2026-11-10, the built CLI queried MusicBrainz with title and artist tags from four local samples. The input SHA-256 checksums matched before and after each lookup. Expected recording IDs came from the catalog listings for the sample versions in the [manifest](mp3-samples.tsv).
+
+| Sample | Observed result |
+| --- | --- |
+| My Home Town | The [live recording on *Revisited*, track 9](https://musicbrainz.org/recording/232265e2-7983-461a-918a-be86d0b87a9c) appeared fifth after an initial HTTP 503. |
+| When You Are Old and Gray | Five candidates appeared. The [expected live recording](https://musicbrainz.org/recording/9bd8d12b-188c-4b2a-8667-ecc035aa4302), cataloged as “When You Are Old and Grey,” was absent. |
+| The Wiener Schnitzel Waltz | Five candidates appeared, including the live version. The [expected studio recording on disc 1, track 12](https://musicbrainz.org/recording/9d769e0b-cb10-4ae8-abe2-a915b71cef74) was absent. |
+| It Makes a Fellow Proud to Be a Soldier | MusicBrainz returned HTTP 503 and the CLI exited `1`. |
+
+The results show why recordings with similar credits still need human review. Broader retrieval accuracy and ranking remain open.
+
 ## Limits of this collection
 
-One artist, one album family, and one tag version do not form a representative music library. This collection does not establish coverage for ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, or unsupported flags. Generated tests cover those supported and rejected cases independently of the downloads. Recognition accuracy and service matching have not been evaluated because the CLI performs no identification or lookups.
+The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.
 
 To repeat local validation, download samples from the manifest into `music/`, build the CLI, and inspect the directory:
 

@@ -9,6 +9,7 @@ import (
 )
 
 const usage = "Usage: l1ner inspect [--recursive] [--json] <file-or-directory>"
+const commandUsage = usage + "\n       " + lookupSyntax
 
 type inspectOptions struct {
 	path      string
@@ -19,12 +20,19 @@ type inspectOptions struct {
 func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
 func run(args []string, out, errOut io.Writer) int {
+	return runWithLookup(args, out, errOut, searchMusicBrainz)
+}
+
+func runWithLookup(args []string, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
-		fmt.Fprintln(out, usage)
+		fmt.Fprintln(out, commandUsage)
 		return 0
 	}
+	if len(args) > 0 && args[0] == "lookup" {
+		return runLookup(args[1:], out, errOut, search)
+	}
 	if len(args) == 0 || args[0] != "inspect" {
-		fmt.Fprintln(errOut, usage)
+		fmt.Fprintln(errOut, commandUsage)
 		return 2
 	}
 	options, err := parseInspectOptions(args[1:])
