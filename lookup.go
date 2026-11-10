@@ -13,27 +13,34 @@ import (
 const lookupSyntax = "l1ner lookup <file.mp3>"
 
 func runLookup(args []string, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
-	flags := flag.NewFlagSet("lookup", flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
-	err := flags.Parse(args)
+	path, err := parseSongPath("lookup", args)
 	if errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(out, "Usage: "+lookupSyntax)
 		fmt.Fprintln(out, "Send the MP3's embedded title and artist to MusicBrainz and show recording candidates.")
 		return 0
-	}
-	if err == nil && flags.NArg() != 1 {
-		err = errors.New("expected one MP3 file path")
 	}
 	if err != nil {
 		reportError(errOut, err)
 		fmt.Fprintln(errOut, "Usage: "+lookupSyntax)
 		return 2
 	}
-	if err := lookupFile(flags.Arg(0), out, search); err != nil {
+	if err := lookupFile(path, out, search); err != nil {
 		reportError(errOut, err)
 		return 1
 	}
 	return 0
+}
+
+func parseSongPath(command string, args []string) (string, error) {
+	flags := flag.NewFlagSet(command, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	if err := flags.Parse(args); err != nil {
+		return "", err
+	}
+	if flags.NArg() != 1 {
+		return "", errors.New("expected one MP3 file path")
+	}
+	return flags.Arg(0), nil
 }
 
 func lookupFile(path string, out io.Writer, search func(title, artist string) ([]recording, error)) error {

@@ -69,7 +69,7 @@ func TestLookupCommand(t *testing.T) {
 		]}`)
 	})
 	var out, errOut bytes.Buffer
-	code := runWithLookup([]string{"lookup", path}, &out, &errOut, client.search)
+	code := runCommand([]string{"lookup", path}, nil, &out, &errOut, client.search)
 	if code != 0 || errOut.Len() != 0 {
 		t.Fatalf("lookup exit = %d, stderr = %q", code, &errOut)
 	}
@@ -111,7 +111,7 @@ func TestLookupWithoutRequest(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out, errOut bytes.Buffer
-			code := runWithLookup(tc.args, &out, &errOut, client.search)
+			code := runCommand(tc.args, nil, &out, &errOut, client.search)
 			if code != tc.code {
 				t.Errorf("exit = %d, want %d", code, tc.code)
 			}
@@ -152,7 +152,7 @@ func TestLookupCommandOutcomes(t *testing.T) {
 			if tc.write != nil {
 				writer = failingWriter{err: tc.write}
 			}
-			code := runWithLookup([]string{"lookup", path}, writer, &errOut, client.search)
+			code := runCommand([]string{"lookup", path}, nil, writer, &errOut, client.search)
 			if code != tc.code {
 				t.Errorf("exit = %d, want %d", code, tc.code)
 			}
