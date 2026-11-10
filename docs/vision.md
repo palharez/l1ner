@@ -208,7 +208,7 @@ The terminal wizard lets the listener choose a recording and review the proposed
 
 ### Implemented Extension — Folder Fixes
 
-`fix` also reviews the immediate MP3s in a folder one at a time. Each approval applies only to the displayed song. The listener can skip files or quit with the remaining songs pending. See the [folder workflow](../README.md#fix-a-folder).
+`fix` also reviews the immediate MP3s in a folder one at a time. The listener can search by tags or opt in to matching by sound with `--from-audio`. Each approval applies only to the displayed song. The listener can skip files or quit with the remaining songs pending. See the [folder workflow](../README.md#fix-a-folder).
 
 ### Implemented Extension — Audio Identification
 

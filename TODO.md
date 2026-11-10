@@ -86,7 +86,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 
 1. [x] Add a cancellable, bounded wait for the local AcoustID rate limit during a batch. Verify that waiting keeps the fingerprint and that service errors are reported for the song. Commit as `feat(identify): wait for AcoustID capacity during batches`.
 2. [x] Route audio matches through the existing batch review and summary. Verify Apply, Skip, per-file failure continuation, and pending songs. Commit as `feat(fix): review a folder using audio matches`.
-3. [ ] Run the contributor checks, validate the built CLI, and document folder usage. Commit as `docs(fix): document audio-assisted folder review`.
+3. [x] Run the contributor checks, validate the built CLI, and document folder usage. Commit as `docs(fix): document audio-assisted folder review`.
 
 ## Future directions — not committed scope
 

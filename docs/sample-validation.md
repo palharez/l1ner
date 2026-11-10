@@ -57,6 +57,12 @@ The built CLI used Chromaprint 1.6.2 and AcoustID's documented test key to revie
 
 Choosing Apply in a separate fix run added ID3v2.4 title `My Home Town` and artist `Tom Lehrer`. A byte comparison confirmed that the entire original audio followed the new tag and that the backup matched the original tagless file. Restoring the backup recovered those exact bytes. All three commands exited `0`, restored the terminal mode, and left the reference MP3 intact.
 
+## Audio-assisted folder review
+
+The built CLI reviewed four disposable tagless copies of “My Home Town” using AcoustID's documented test key. The test applied the first proposal, skipped the second, and quit at the third picker. The summary reported one applied, one skipped, and two pending. A nested MP3 and a symlink were excluded from the count.
+
+The approved copy acquired the expected title and artist in an ID3v2.4 tag. Its audio and backup matched the original byte for byte. The other copies and the reference MP3 stayed intact. The command exited `0` and restored the terminal mode.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

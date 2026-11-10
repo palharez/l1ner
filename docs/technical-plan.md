@@ -123,7 +123,7 @@ Tests exercise the command with generated MP3s and a local HTTP server. The [sam
 
 `identify` validates one regular MP3 and invokes `fpcalc` with the MP3 demuxer, JSON output, and an absolute path. The process has a 30-second timeout and bounded output. The CLI keeps the fingerprint and results in memory and posts the fingerprint and whole-file duration to AcoustID with `meta=recordings`. The HTTPS request has a 10-second timeout and declines redirects. The two services use independent rate markers.
 
-The CLI displays distinct MusicBrainz recording IDs in descending AcoustID score order. Repeated IDs keep the highest score. `identify` ends after showing candidates. Interactive `preview --from-audio` and `fix --from-audio` send the same request for one song and use candidates with both title and artist in the picker. Those commands pass the opened file to `fpcalc` via an inherited descriptor so a path swap cannot change the audio being matched. See the [provider decision](open-questions.md#first-audio-lookup--acoustid) and [live validation](sample-validation.md#audio-assisted-repair).
+The CLI displays distinct MusicBrainz recording IDs in descending AcoustID score order. Repeated IDs keep the highest score. `identify` ends after showing candidates. Interactive `preview --from-audio` and `fix --from-audio` send the same request per song and use candidates with both title and artist in the picker. Those commands pass the opened file to `fpcalc` via an inherited descriptor so a path swap cannot change the audio being matched. See the [provider decision](open-questions.md#first-audio-lookup--acoustid) and [live validation](sample-validation.md#audio-assisted-repair).
 
 ## Single-song fix
 
@@ -137,7 +137,9 @@ The backup is published under an exclusive `.l1ner.bak` name and synced before t
 
 ## Folder fixes
 
-`fixbatch.go` uses the existing immediate-directory scan and processes paths sequentially. Each song goes through the same review and verified write path as a single file. The batch paces lookups using a full second after each completed request and waits when the existing local reservation is busy. The wait and HTTP request can be canceled. Service failures are reported for the affected file and the batch continues.
+`fixbatch.go` uses the existing immediate-directory scan and processes paths sequentially. Each song goes through the same review and verified write path as a single file. For tag-based search, the batch waits a full second after each completed request and waits when the local reservation is busy. The wait and HTTP request can be canceled. Service failures are reported for the affected file and the batch continues.
+
+In audio mode the batch waits for the AcoustID reservation after calculating the fingerprint, keeping it in memory while the slot is busy. The wait honors cancellation and has a 10-second bound. A network or provider error after sending the request is reported for that file.
 
 An approved replacement and its backup are kept when the review ends. The batch tracks six outcomes in memory and counts unvisited songs as pending. A terminal or output failure stops further reviews. The [folder usage](../README.md#fix-a-folder) describes scope and exit codes.
 
