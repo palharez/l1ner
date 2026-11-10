@@ -14,11 +14,13 @@ The implemented CLI inspects local MP3 files and directories on Linux, read-only
 ## Decide the next milestone together
 
 - [x] Review the first MVP's terminal output and error messages in everyday use. Accepted on 2026-11-10; batch output can be difficult to review per song, but this does not block the inspection milestone.
-- [ ] Agree on the next user-facing capability after directory inspection and its success criteria before extending the scope.
+- [x] Agree on the next user-facing capability after directory inspection: `--json` writes one report to stdout, including per-file results, errors, and summary counts; no automatic storage.
 
-## Completed extension
+## Completed extensions
 
 - [x] Add directory scanning and batch inspection: immediate-folder scanning, optional `--recursive`, deterministic order, per-path errors, and summary counts.
+
+- [x] Add optional JSON output for files and directories, document the versioned format, and test error reporting, repeated metadata, binary summaries, and input integrity.
 
 ## Future directions — not committed scope
 

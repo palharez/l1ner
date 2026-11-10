@@ -8,11 +8,12 @@ import (
 	"os"
 )
 
-const usage = "Usage: l1ner inspect [--recursive] <file-or-directory>"
+const usage = "Usage: l1ner inspect [--recursive] [--json] <file-or-directory>"
 
 type inspectOptions struct {
 	path      string
 	recursive bool
+	json      bool
 }
 
 func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
@@ -40,6 +41,9 @@ func run(args []string, out, errOut io.Writer) int {
 }
 
 func runInspection(options inspectOptions, out, errOut io.Writer) int {
+	if options.json {
+		return runJSONInspection(options, out, errOut)
+	}
 	info, err := os.Stat(options.path)
 	if err != nil {
 		reportError(errOut, err)
@@ -64,6 +68,7 @@ func parseInspectOptions(args []string) (inspectOptions, error) {
 	flags := flag.NewFlagSet("inspect", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	flags.BoolVar(&options.recursive, "recursive", false, "inspect subdirectories")
+	flags.BoolVar(&options.json, "json", false, "write one JSON report to stdout")
 	if err := flags.Parse(args); err != nil {
 		return options, err
 	}

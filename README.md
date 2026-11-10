@@ -14,11 +14,11 @@ Read existing metadata from a local MP3 file or directory and display it in the 
 - Supports ID3v2.3 and ID3v2.4 tags.
 - Displays all metadata exposed by the reader, including custom fields and repeated values.
 - Shows text values in full and describes embedded artwork and other binary data by type and size where available.
-- Shows only existing tags, or `No metadata found` when none are present.
+- Shows only existing tags, or `No metadata found` in text mode when none are present. JSON uses an empty metadata array.
 - Reports unreadable files and unsupported tag versions clearly.
 - Leaves the file unchanged and performs no network lookups.
 
-Directory scanning extends the original single-file MVP. Identification, external services, and metadata editing remain deferred.
+Directory scanning and optional JSON output extend the original single-file MVP. Identification, external services, and metadata editing remain deferred.
 
 ## Usage
 
@@ -55,13 +55,24 @@ go build -o bin/l1ner .
 
 Use `go run . --help` for usage. Put flags before the path; quote paths containing spaces.
 
+### JSON output
+
+Write a machine-readable report to stdout or redirect it to a file:
+
+```sh
+./bin/l1ner inspect --json music/song.mp3
+./bin/l1ner inspect --json --recursive music/ > inspection.json
+```
+
+Both input modes produce one document containing `schema_version`, `files`, `scan_errors`, and `summary`. Metadata is an array to preserve repeated tags; binary data is summarized, never embedded. No report is saved automatically. See the [JSON output format](docs/json-output.md) for fields, examples, and error handling.
+
 ### Directory behavior
 
 - Scan only the selected folder unless `--recursive` is supplied.
 - Inspect regular files with a case-insensitive `.mp3` extension in lexical directory traversal order. Other files and discovered symlinks are skipped. A directory symlink supplied as the root is rejected explicitly.
 - Process files sequentially and keep each file's existing metadata layout, separated by a blank line.
-- Report per-file errors with their paths to stderr and continue inspecting other files. Unreadable directories are scan errors; readable sibling directories still get scanned.
-- Finish with `Summary: N inspected, N failed, N scan errors`. `inspected` counts successful files, including files without tags; `failed` counts file inspection failures. Skipped non-MP3 files are not counted.
+- In text mode, report per-file errors with their paths to stderr and continue inspecting other files. Unreadable directories are scan errors; readable sibling directories still get scanned.
+- In text mode, finish with `Summary: N inspected, N failed, N scan errors`. `inspected` counts successful files, including files without tags; `failed` counts file inspection failures. Skipped non-MP3 files are not counted.
 - If there are no matching MP3s and no scan errors, print `No MP3 files found.` and a zero summary, exiting successfully.
 - Exit with status 1 if any file or scan fails. An output-write failure stops the batch immediately, so a complete summary may not be available. Single-file output stays unchanged.
 
@@ -99,7 +110,7 @@ Frames are displayed in identifier order. Text values are decoded by the metadat
 
 ID3v1 and ID3v2.2 are unsupported. Tag-level flags (including extended headers and unsynchronisation), frame format flags (such as compression or encryption), and tags over 64 MiB produce explicit errors. This MVP recognizes MP3/ID3 headers but does not validate or decode the entire audio stream. When a supported ID3v2 tag and a legacy ID3v1 tag coexist, inspection covers the ID3v2 tag only.
 
-Successful inspection, including no metadata, exits with status 0. Inspection errors exit with 1; invalid arguments exit with 2. Errors go to stderr. `go run` may report its own exit status; use the built binary when consuming exit codes.
+Successful inspection, including no metadata, exits with status 0. Inspection errors exit with 1; invalid arguments exit with 2. Text-mode errors go to stderr. With `--json`, inspection and scan errors are included in the JSON report; invalid arguments and output-write failures go to stderr. `go run` may report its own exit status; use the built binary when consuming exit codes.
 
 ## Local music files
 
@@ -114,6 +125,7 @@ The documented local validation collection contains 20 MP3 samples from one arti
 - [Next steps](TODO.md): prioritized tasks and future directions.
 - [Product vision](docs/vision.md): concept, principles, MVP scope, and success criteria.
 - [Open questions](docs/open-questions.md): agreed decisions and questions for later phases.
+- [JSON output](docs/json-output.md): report format, examples, and error handling.
 - [Technical plan](docs/technical-plan.md): library selection, read-only workflow, and validation approach.
 - [Sample validation](docs/sample-validation.md): local observations, provenance, and coverage limits.
 

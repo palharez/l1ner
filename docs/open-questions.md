@@ -154,7 +154,9 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.
-- [ ] What output formats should be available for automation?
+- [x] What output format should be available for automation?
+
+  **Decision — 2026-11-10:** Add `--json` for single-file and directory inspection. Write one report to stdout with per-file metadata/errors, directory scan errors, and summary counts. Preserve repeated metadata as arrays and exclude raw binary payloads. Users choose where to save output with shell redirection; there is no automatic `/tmp` storage. Existing text mode stays the default. See the [version 1 report format](json-output.md).
 - [x] How are current testing and continuous integration structured?
 
   **Implemented:** Standard Go tests cover inspection, rendering, and directory batches with generated fixtures. GitHub Actions runs formatting, dependency verification, tests, vet, and build in one Linux job, with a timeout and cancellation of outdated runs. See [CONTRIBUTING.md](../CONTRIBUTING.md#continuous-integration).

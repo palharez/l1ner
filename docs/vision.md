@@ -176,7 +176,7 @@ The CLI reads the file without modifying it. It works locally without external l
 - Artwork retrieval, extraction, or display.
 - Change previews and approval workflows.
 - Metadata enrichment or writing in batches (read-only directory inspection is available as an extension).
-- Report files and structured output for automation.
+- Automatic report-file creation (optional JSON to stdout is available as an extension).
 - Renaming, moving, deleting, or reorganizing files.
 - Duplicate detection.
 - Music downloading, playback, or streaming.
@@ -193,6 +193,10 @@ The excluded capabilities remain future directions; they are not requirements fo
 ### Implemented Extension — Directory Inspection
 
 Following completion of the first MVP, read-only inspection also accepts directories. The CLI scans MP3s in the immediate folder by default or includes subfolders with `--recursive`. It continues after individual failures, reports errors with file paths, and summarizes successes, failures, and scan errors. Existing single-file output remains unchanged. See [the recorded decisions](open-questions.md#directory-inspection--agreed-extension).
+
+### Implemented Extension — JSON Output
+
+An optional `--json` flag emits one machine-readable report for file or directory inspection. It includes per-file results/errors, scan errors, and summary counts. Repeated metadata remains an array, and binary payloads are summarized. Users may save stdout through shell redirection; the CLI does not select a storage location. Text output remains the default. See the [report format](json-output.md).
 
 ## 8. Success Criteria
 

@@ -7,7 +7,7 @@
 - Platform: Linux.
 - Language: Go.
 - Execution: run from source on the user's local machine.
-- Interface: `l1ner inspect [--recursive] <file-or-directory>`; recursion applies only to directories.
+- Interface: `l1ner inspect [--recursive] [--json] <file-or-directory>`; recursion applies only to directories.
 - Metadata reader: `github.com/bogem/id3v2/v2`, pinned to `v2.1.4` for initial implementation.
 - Supported tags: ID3v2.3 and ID3v2.4 in MP3 files.
 - File access: read-only; no external services or network lookups.
@@ -67,6 +67,7 @@ Implemented files:
 | `batch_test.go` | Generated directory fixtures, recursion, filtering, symlink handling, continuation, output errors, and integrity checks. |
 | `inspect.go` | Read-only file access, tag detection, and tag-header validation. |
 | `frames.go` | Frame-header validation, iteration, and library decoding adapter. |
+| `json.go`, `json_test.go` | JSON report types, collection, serialization, and behavior tests. |
 | `output.go` | Stable ordering and readable text/binary frame presentation. |
 | `inspect_test.go` | Generated MP3 fixtures for parsing, boundary checks, errors, and file integrity. |
 | `output_test.go` | Direct rendering tests for ordering, Unicode, escaping, summaries, and writer failures. |
@@ -112,5 +113,13 @@ The reference includes a nonstandard `YEAR` frame. It is reported as unparsed da
 Discovery records paths and directory-read errors. Processing stays sequential and delegates each file to the existing read-only inspector and renderer. File errors and scan errors are reported separately; they do not stop other inspections. An output-write failure stops the batch. Successful output ends with counts of inspected files, failed files, and scan errors. The process exits 1 on any failure and 0 for a successful empty scan.
 
 Tests use temporary directories and generated metadata; they cover nesting, uppercase extensions, ignored files, symlink loops, empty scans, per-file failure continuation, unreadable subdirectories, writer failures, and unchanged files.
+
+## JSON Output Extension
+
+The optional `--json` flag switches rendering to one versioned JSON report without changing metadata-reader coverage or directory discovery rules. `json.go` collects per-file results and directory scan errors, maps exposed frames to structured summaries, and encodes with Go's standard `encoding/json` package. No new dependency is needed. Text rendering remains unchanged.
+
+The report schema and failure behavior are documented in [JSON output](json-output.md). Reports contain metadata summaries rather than raw image or unknown-frame payloads. Results are accumulated in memory before encoding; output is not streamed per file. File/scan failures remain machine-readable in the report with exit status 1; invalid arguments produce stderr and exit 2, and write errors produce stderr and exit 1.
+
+Generated tests cover single files, shallow/recursive directories, mixed success/failure, empty scans, missing/malformed input, scan errors, writer failures, typed metadata, Unicode/control escaping, repeated values, and unchanged files. Existing text-mode regression tests remain in place.
 
 Packaging, distribution, metadata writing, additional tag formats, and external services remain deferred.

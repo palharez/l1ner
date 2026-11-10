@@ -41,7 +41,7 @@ go vet ./...
 go build -o bin/l1ner .
 ```
 
-Tests are organized by behavior: `inspect_test.go` uses generated MP3 tag fixtures to exercise reading, validation, and file integrity; `output_test.go` supplies in-memory metadata to check terminal rendering and writer failures directly. `batch_test.go` exercises directory traversal, filtering, recursion, summaries, failure continuation, and file integrity using temporary directories. No suite requires `music/`.
+Tests are organized by behavior: `inspect_test.go` uses generated MP3 tag fixtures to exercise reading, validation, and file integrity; `output_test.go` supplies in-memory metadata to check terminal rendering and writer failures directly. `batch_test.go` exercises directory traversal, filtering, recursion, summaries, failure continuation, and file integrity using temporary directories. `json_test.go` checks the public JSON format, single/batch results, partial failures, data fidelity, and write errors. No suite requires `music/`.
 
 To focus on output behavior while developing:
 
