@@ -215,7 +215,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, `l1ner preview <file.mp3>`, and `l1ner fix <file-or-directory>`. Flags precede the path.
+  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. `preview` and `fix` accept `--from-audio` for one MP3. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

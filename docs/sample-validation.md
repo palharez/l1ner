@@ -51,6 +51,12 @@ On 2026-11-10, the built CLI ran `identify` on two read-only copies of “My Hom
 
 Both copies and the reference MP3 kept their SHA-256 checksums. The live run covers one recording. A deterministic test with a local HTTP server checks that distinct recording IDs are retained when a response is ambiguous.
 
+## Audio-assisted repair
+
+The built CLI used Chromaprint 1.6.2 and AcoustID's documented test key to review a disposable tagless copy of “My Home Town” in a Linux pseudo-terminal. It offered the expected recording and showed both current fields as missing. Accepting the preview and choosing Skip in fix each left the copy byte for byte intact and created no backup.
+
+Choosing Apply in a separate fix run added ID3v2.4 title `My Home Town` and artist `Tom Lehrer`. A byte comparison confirmed that the entire original audio followed the new tag and that the backup matched the original tagless file. Restoring the backup recovered those exact bytes. All three commands exited `0`, restored the terminal mode, and left the reference MP3 intact.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

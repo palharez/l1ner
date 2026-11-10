@@ -49,6 +49,8 @@ CLI tests live in `internal/cli`. `inspect_test.go` uses generated MP3 tag fixtu
 
 The audio identification tests use a stub `fpcalc` and a local HTTP server. They cover the data sent to AcoustID, ambiguous and empty results, errors, and unchanged input bytes. No AcoustID key or installed Chromaprint utility is needed for automated tests.
 
+`audioreview_test.go` drives audio-assisted preview and fix with a stub search and a Linux pseudo-terminal. It verifies candidate selection, missing fields, Skip, approved changes, exact backups, and audio preservation.
+
 `preview_test.go` uses generated tags and a local HTTP server. Linux pseudo-terminal tests exercise the keyboard workflow and verify terminal restoration and file integrity.
 
 `rewrite_test.go` and `fixfile_test.go` exercise frame preservation, verified replacement, backup collisions, concurrent changes, and recovery. `fix_test.go` drives the approval prompt in a Linux pseudo-terminal using generated MP3s and a local HTTP server.
