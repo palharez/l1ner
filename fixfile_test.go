@@ -28,7 +28,7 @@ func TestFixReplacesOnlyApprovedTagsAndBacksUp(t *testing.T) {
 	}
 	defer target.close()
 	proposal := proposeSong(path, target.tags, recording{id: "studio", title: "A longer Title", artist: "New Artist"})
-	result, err := target.apply(proposal)
+	result, err := target.apply(t.Context(), proposal)
 	if err != nil || result.syncWarning != nil || result.backupPath != path+backupSuffix {
 		t.Fatalf("apply = (%+v, %v)", result, err)
 	}
@@ -87,7 +87,7 @@ func TestFixHandlesConcurrentChanges(t *testing.T) {
 				}
 			}
 			proposal := proposeSong(path, target.tags, recording{title: "Title", artist: "Artist"})
-			if _, err := target.apply(proposal); err == nil || !strings.Contains(err.Error(), wantError) {
+			if _, err := target.apply(t.Context(), proposal); err == nil || !strings.Contains(err.Error(), wantError) {
 				t.Errorf("apply error = %v, want %q", err, wantError)
 			}
 			if current, err := os.ReadFile(path); err != nil || !bytes.Equal(current, original) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
@@ -148,7 +149,10 @@ type fixResult struct {
 	syncWarning error
 }
 
-func (t *fixTarget) apply(proposal songProposal) (fixResult, error) {
+func (t *fixTarget) apply(ctx context.Context, proposal songProposal) (fixResult, error) {
+	if ctx.Err() != nil {
+		return fixResult{}, errPreviewCanceled
+	}
 	if proposal.path != t.path || !proposal.changed() ||
 		!slices.Equal(proposal.title.current, t.tags.titles) || !slices.Equal(proposal.artist.current, t.tags.artists) {
 		return fixResult{}, errors.New("proposal does not match the reviewed MP3")
@@ -183,7 +187,7 @@ func (t *fixTarget) apply(proposal songProposal) (fixResult, error) {
 			return fixResult{}, fmt.Errorf("finish staged MP3: %w", err)
 		}
 	}
-	return t.publish(backupStage, replacementStage)
+	return t.publish(ctx, backupStage, replacementStage)
 }
 
 func (t *fixTarget) stageFile() (*os.File, string, error) {
@@ -303,7 +307,7 @@ func finishStage(file *os.File, original os.FileInfo) error {
 	return file.Close()
 }
 
-func (t *fixTarget) publish(backupStage, replacementStage string) (fixResult, error) {
+func (t *fixTarget) publish(ctx context.Context, backupStage, replacementStage string) (fixResult, error) {
 	directory, err := t.dir.Open(".")
 	if err != nil {
 		return fixResult{}, err
@@ -311,6 +315,9 @@ func (t *fixTarget) publish(backupStage, replacementStage string) (fixResult, er
 	defer directory.Close()
 	if err := t.checkOriginal(); err != nil {
 		return fixResult{}, err
+	}
+	if ctx.Err() != nil {
+		return fixResult{}, errPreviewCanceled
 	}
 	backupPath := t.path + backupSuffix
 	if err := t.dir.Link(backupStage, t.name+backupSuffix); err != nil {
@@ -322,6 +329,9 @@ func (t *fixTarget) publish(backupStage, replacementStage string) (fixResult, er
 	}
 	if err := t.verifyOriginal(); err != nil {
 		return fixResult{}, fmt.Errorf("%w; backup saved at %s", err, backupPath)
+	}
+	if ctx.Err() != nil {
+		return fixResult{}, fmt.Errorf("fix canceled; backup saved at %s: %w", backupPath, errPreviewCanceled)
 	}
 	if err := t.dir.Rename(replacementStage, t.name); err != nil {
 		return fixResult{}, fmt.Errorf("replace MP3 (backup at %s): %w", backupPath, err)

@@ -26,6 +26,7 @@ const (
 	reviewChooseAgain
 	reviewQuit
 	reviewUnchanged
+	reviewUnresolved
 )
 
 type songReview struct {
@@ -33,30 +34,44 @@ type songReview struct {
 	proposal songProposal
 }
 
-func runPreview(args []string, in io.Reader, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
-	path, err := parseSongPath("preview", args)
+func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
+	syntax := previewSyntax
+	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change."
+	canceled := "Preview canceled."
+	reviewFile := previewFile
+	if command == "fix" {
+		syntax = fixSyntax
+		help = "Review a MusicBrainz proposal and apply approved title and artist changes with a backup."
+		canceled = "Fix canceled."
+		reviewFile = fixFile
+	}
+	path, err := parseSongPath(command, args)
 	if errors.Is(err, flag.ErrHelp) {
-		fmt.Fprintln(out, "Usage: "+previewSyntax)
-		fmt.Fprintln(out, "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change.")
+		fmt.Fprintln(out, "Usage: "+syntax)
+		fmt.Fprintln(out, help)
 		return 0
 	}
 	if err != nil {
 		reportError(errOut, err)
-		fmt.Fprintln(errOut, "Usage: "+previewSyntax)
+		fmt.Fprintln(errOut, "Usage: "+syntax)
 		return 2
 	}
 	input, inputIsFile := in.(*os.File)
 	output, outputIsFile := out.(*os.File)
 	if !inputIsFile || !outputIsFile || !term.IsTerminal(int(input.Fd())) || !term.IsTerminal(int(output.Fd())) {
-		reportError(errOut, errors.New("preview requires a terminal for input and output"))
+		reportError(errOut, fmt.Errorf("%s requires a terminal for input and output", command))
 		return 1
 	}
 	choose := func(question string, options []string, selected int) (int, error) {
 		return selectTerminalMenu(input, output, question, options, selected)
 	}
-	if err := previewFile(path, out, search, choose); err != nil {
+	if err := reviewFile(path, out, search, choose); err != nil {
 		if errors.Is(err, errPreviewCanceled) {
-			fmt.Fprintln(errOut, "Preview canceled.")
+			if err == errPreviewCanceled {
+				fmt.Fprintln(errOut, canceled)
+			} else {
+				reportError(errOut, err)
+			}
 			return 130
 		}
 		reportError(errOut, err)
@@ -70,16 +85,7 @@ func previewFile(path string, out io.Writer, search func(title, artist string) (
 	if err != nil {
 		return err
 	}
-	title, artist := tags.searchTerms()
-	matches, err := search(title, artist)
-	if err != nil {
-		return err
-	}
-	if len(matches) == 0 {
-		_, err := fmt.Fprintf(out, "File: %s\nNo MusicBrainz recording candidates found.\n", safe(path))
-		return err
-	}
-	review, err := reviewSong(out, path, tags, matches, choose)
+	review, err := searchAndReview(out, path, tags, search, choose, "Accept proposal (preview only)")
 	if err != nil {
 		return err
 	}
@@ -94,7 +100,20 @@ func previewFile(path string, out io.Writer, search func(title, artist string) (
 	return err
 }
 
-func reviewSong(out io.Writer, path string, tags songTags, matches []recording, choose menuSelector) (songReview, error) {
+func searchAndReview(out io.Writer, path string, tags songTags, search func(title, artist string) ([]recording, error), choose menuSelector, applyLabel string) (songReview, error) {
+	title, artist := tags.searchTerms()
+	matches, err := search(title, artist)
+	if err != nil {
+		return songReview{}, err
+	}
+	if len(matches) == 0 {
+		_, err := fmt.Fprintf(out, "File: %s\nNo MusicBrainz recording candidates found.\n", safe(path))
+		return songReview{decision: reviewUnresolved}, err
+	}
+	return reviewSong(out, path, tags, matches, choose, applyLabel)
+}
+
+func reviewSong(out io.Writer, path string, tags songTags, matches []recording, choose menuSelector, applyLabel string) (songReview, error) {
 	options, err := displayPreviewCandidates(out, path, matches)
 	if err != nil {
 		return songReview{}, err
@@ -102,7 +121,7 @@ func reviewSong(out io.Writer, path string, tags songTags, matches []recording, 
 	options = append(options, "Skip song", "Quit")
 	actions := []string{
 		reviewSkip:        "Skip song",
-		reviewAccept:      "Accept proposal (preview only)",
+		reviewAccept:      applyLabel,
 		reviewChooseAgain: "Choose another recording",
 		reviewQuit:        "Quit",
 	}
