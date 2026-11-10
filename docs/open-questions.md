@@ -85,6 +85,37 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 - [ ] How should per-song review show existing and proposed values, support skipping/rejection, and navigate a batch?
 
+### Interactive song review
+
+**Accepted starting point.** The first MusicBrainz lookup is accepted as shipped. The next step is to let a listener choose a candidate and see how it would change the MP3's tags.
+
+**Implemented one-song flow.** Use `l1ner preview <file.mp3>` in a terminal. The command uses the existing lookup's title and artist query and lets the user move with the arrow keys and choose with Enter. It shows the recording title, credited artist, recording ID, and any disambiguation or duration supplied by MusicBrainz. After selection it shows the file path and compares the current and proposed title and artist. See the [live terminal check](sample-validation.md#interactive-preview).
+
+```text
+$ l1ner preview music/song.mp3
+
+? Choose a recording  (↑/↓, Enter)
+❯ Example Song — Example Artist  ·  live, 2:27
+  Example Song — Example Artist  ·  studio, 2:19
+  Skip song
+  Quit
+
+File       music/song.mp3
+Field      Current          Proposed
+Title      example song     Example Song    changed
+Artist     Example Artist   Example Artist  same
+
+? Review this proposal
+❯ Skip song
+  Accept proposal (preview only)
+  Choose another recording
+  Quit
+```
+
+Highlight Skip by default on the proposal screen. Accept records the decision for the current run and prints a summary of the accepted proposal. Skip ends review of that song. Quit and Ctrl+C exit the review. If the tags already agree, show that outcome and finish. The milestone opens the MP3 read-only, and the terminal is restored when the wizard exits.
+
+**Proposed batch behavior.** Present the same comparison one song at a time with progress such as `Song 3 of 20`. Accept applies only to the displayed song. Skip advances to the next song, and Quit ends the review with the remaining songs pending. Summarize accepted, skipped, unresolved, and failed items. Keep the per-song proposal and decision separate from terminal input so the batch workflow can reuse them. Directory traversal, revisiting prior decisions, saved sessions, and safe application of changes need their own acceptance criteria.
+
 ## Broader Product — Product Validation
 
 - [ ] What reference collection represents the initial users' libraries, including difficult and unresolved cases?
@@ -164,7 +195,7 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 - [x] What is the current command structure?
 
-  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>` and `l1ner lookup <file.mp3>`. Flags precede the path.
+  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, and `l1ner preview <file.mp3>`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

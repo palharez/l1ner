@@ -34,15 +34,18 @@ func TestReadLookupTags(t *testing.T) {
 					frames = append(frames, frame(version, "TIT2", []byte("\x00"+title)))
 				}
 				path := save(t, fixture(version, frames...))
-				title, artist, err := readLookupTags(path)
+				tags, err := readLookupTags(path)
 				if tc.wantError != "" {
 					if err == nil || err.Error() != tc.wantError {
 						t.Errorf("readLookupTags error = %v, want %q", err, tc.wantError)
 					}
 					return
 				}
-				if err != nil || title != "Title" || artist != "Artist" {
-					t.Errorf("readLookupTags = (%q, %q, %v), want (Title, Artist, nil)", title, artist, err)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if title, artist := tags.searchTerms(); title != "Title" || artist != "Artist" {
+					t.Errorf("search terms = (%q, %q), want (Title, Artist)", title, artist)
 				}
 			})
 		}
@@ -66,7 +69,7 @@ func TestLookupCommand(t *testing.T) {
 		]}`)
 	})
 	var out, errOut bytes.Buffer
-	code := runWithLookup([]string{"lookup", path}, &out, &errOut, client.search)
+	code := runCommand([]string{"lookup", path}, nil, &out, &errOut, client.search)
 	if code != 0 || errOut.Len() != 0 {
 		t.Fatalf("lookup exit = %d, stderr = %q", code, &errOut)
 	}
@@ -108,7 +111,7 @@ func TestLookupWithoutRequest(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out, errOut bytes.Buffer
-			code := runWithLookup(tc.args, &out, &errOut, client.search)
+			code := runCommand(tc.args, nil, &out, &errOut, client.search)
 			if code != tc.code {
 				t.Errorf("exit = %d, want %d", code, tc.code)
 			}
@@ -149,7 +152,7 @@ func TestLookupCommandOutcomes(t *testing.T) {
 			if tc.write != nil {
 				writer = failingWriter{err: tc.write}
 			}
-			code := runWithLookup([]string{"lookup", path}, writer, &errOut, client.search)
+			code := runCommand([]string{"lookup", path}, nil, writer, &errOut, client.search)
 			if code != tc.code {
 				t.Errorf("exit = %d, want %d", code, tc.code)
 			}

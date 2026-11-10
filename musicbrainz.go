@@ -30,7 +30,8 @@ type musicBrainzClient struct {
 }
 
 type recording struct {
-	id, title, artist string
+	id, title, artist, disambiguation string
+	lengthMS                          int64
 }
 
 func searchMusicBrainz(title, artist string) ([]recording, error) {
@@ -149,9 +150,11 @@ func decodeRecordings(body io.Reader) ([]recording, error) {
 	}
 	var result struct {
 		Recordings []struct {
-			ID           string `json:"id"`
-			Title        string `json:"title"`
-			ArtistCredit []struct {
+			ID             string `json:"id"`
+			Title          string `json:"title"`
+			Disambiguation string `json:"disambiguation"`
+			LengthMS       int64  `json:"length"`
+			ArtistCredit   []struct {
 				Name       string `json:"name"`
 				JoinPhrase string `json:"joinphrase"`
 				Artist     struct {
@@ -184,7 +187,10 @@ func decodeRecordings(body io.Reader) ([]recording, error) {
 		if item.ID == "" || item.Title == "" || credit.Len() == 0 {
 			return nil, errors.New("MusicBrainz response has an incomplete recording")
 		}
-		matches = append(matches, recording{item.ID, item.Title, credit.String()})
+		matches = append(matches, recording{
+			id: item.ID, title: item.Title, artist: credit.String(),
+			disambiguation: item.Disambiguation, lengthMS: item.LengthMS,
+		})
 	}
 	return matches, nil
 }

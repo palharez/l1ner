@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** Offline MP3 inspection supports files and directories. An opt-in MusicBrainz lookup searches for recording candidates for one MP3.
+**Status:** Inspect MP3s offline, search MusicBrainz for recording candidates, or review proposed title and artist changes for one song in the terminal.
 
 ## First MVP
 
@@ -98,6 +98,18 @@ Artist [TPE1]: Example Artist
 The command displays up to five recording candidates in MusicBrainz order, including title, artist credit, and recording ID. Review candidates before treating any as a match. The catalog can offer several recordings with the same title and artist. See the [live validation results](docs/sample-validation.md#musicbrainz-lookup).
 
 A completed search exits `0`, including when it returns zero candidates. Input, service, and output errors exit `1`. Invalid arguments exit `2`. The request times out after 10 seconds. Concurrent lookups that reach the local limit report an error. l1ner uses a one-byte rate marker at `$XDG_CACHE_HOME/l1ner/musicbrainz-rate`, defaulting to `$HOME/.cache/l1ner/musicbrainz-rate`, to coordinate the [MusicBrainz rate limit](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting) across invocations. Search terms and results are held in memory, and the MP3 is opened read-only.
+
+### Interactive song preview
+
+```sh
+./bin/l1ner preview music/song.mp3
+```
+
+Run `preview` in a Linux terminal. It makes the same MusicBrainz search as `lookup` using the file's title and artist. Move with the arrow keys and press Enter to choose a recording. Candidate details include the recording ID and any version description or duration supplied by MusicBrainz.
+
+The proposal shows the current and proposed title and artist side by side. When the values differ, choose **Accept proposal**, **Skip song**, **Choose another recording**, or **Quit**. Skip is highlighted by default. Accept prints a decision for the current run, and the file is opened read-only. Ctrl+C cancels the review.
+
+A completed review or a search with no candidates exits `0`. Missing or conflicting tags, a service error, or redirected terminal input or output exits `1`. Invalid arguments exit `2`, and Ctrl+C exits `130`.
 
 ## Development
 
