@@ -34,15 +34,18 @@ func TestReadLookupTags(t *testing.T) {
 					frames = append(frames, frame(version, "TIT2", []byte("\x00"+title)))
 				}
 				path := save(t, fixture(version, frames...))
-				title, artist, err := readLookupTags(path)
+				tags, err := readLookupTags(path)
 				if tc.wantError != "" {
 					if err == nil || err.Error() != tc.wantError {
 						t.Errorf("readLookupTags error = %v, want %q", err, tc.wantError)
 					}
 					return
 				}
-				if err != nil || title != "Title" || artist != "Artist" {
-					t.Errorf("readLookupTags = (%q, %q, %v), want (Title, Artist, nil)", title, artist, err)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if title, artist := tags.searchTerms(); title != "Title" || artist != "Artist" {
+					t.Errorf("search terms = (%q, %q), want (Title, Artist)", title, artist)
 				}
 			})
 		}
