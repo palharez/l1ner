@@ -83,10 +83,23 @@ For feature proposals, describe the user need and acceptance criteria before exp
 
 Keep pull requests focused. Explain the problem, the resulting behavior, and the checks performed. Include documentation updates when behavior or limitations change.
 
+## Commit messages
+
+Use [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) for new commits. Write the subject as `type(scope): summary` with an optional scope and a short, imperative summary. Use `feat` for a new capability, `fix` for a bug fix, `docs` for documentation, `test` for test-only work, `refactor` for restructuring that preserves behavior, `ci` for workflow changes, and `chore` for other maintenance.
+
+```text
+feat(lookup): add single-file lookup command
+fix(id3): reject oversized frame sizes
+test: fuzz tag parsing
+docs(contributing): adopt Conventional Commits
+```
+
+Use the body to explain the reason for a change when the subject needs context. Mark breaking changes with `!` or a `BREAKING CHANGE:` footer as specified by the convention.
+
 ## Feature workflow
 
 1. **Read the project context.** Check `git status --short --branch` first. Read [AGENTS.md](AGENTS.md), this guide, the [README](README.md), [TODO.md](TODO.md), and the relevant `docs/` pages. Preserve existing edits and check the branch history before choosing a base.
 2. **Agree on the milestone.** Define the user-facing behavior, data boundaries, and acceptance criteria before implementing. Record decisions in [Open Questions](docs/open-questions.md). Break the work into ordered tasks in [TODO.md](TODO.md), each with a verification step and a commit boundary.
-3. **Work on a milestone branch.** Use the branch name agreed with the user and the repository's default branch as the base. For each task, make the smallest complete change, run its checks, inspect the diff, and commit the task's files together. Keep each commit buildable and leave unrelated work out of it.
+3. **Work on a milestone branch.** Use the branch name agreed with the user and the repository's default branch as the base. For each task, make the smallest complete change, run its checks, inspect the diff, and commit the task's files together using the [commit convention](#commit-messages). Keep each commit buildable and leave unrelated work out of it.
 4. **Verify the complete workflow.** Exercise the feature through its normal entry point and run the checks in [Verification](#verification) for Go changes. Update usage docs, record any manual validation, and check off tasks as they pass. For external integrations, use a local test server in automated tests and record live checks separately.
 5. **Hand off for review.** Share the milestone branch, its commits, check results, and any open decisions. Review the branch against `main` before merging.
