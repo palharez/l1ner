@@ -84,6 +84,10 @@ func readLookupTags(path string) (songTags, error) {
 	if err != nil {
 		return songTags{}, err
 	}
+	return lookupTagsFromEntries(entries)
+}
+
+func lookupTagsFromEntries(entries []entry) (songTags, error) {
 	titles, err := lookupTag(entries, "TIT2", "title")
 	if err != nil {
 		return songTags{}, err
