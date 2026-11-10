@@ -19,6 +19,9 @@ type fingerprint struct {
 	duration int
 }
 
+// ErrFPCalcMissing indicates that fpcalc is unavailable on PATH.
+var ErrFPCalcMissing = errors.New("fpcalc was not found on PATH; install Chromaprint's fpcalc utility")
+
 func fingerprintMP3(ctx context.Context, path string) (fingerprint, error) {
 	if !strings.EqualFold(filepath.Ext(path), ".mp3") {
 		return fingerprint{}, fmt.Errorf("expected an MP3 file: %s", path)
@@ -54,7 +57,7 @@ func runFPCalc(ctx context.Context, path string, file *os.File) (fingerprint, er
 		return fingerprint{}, fmt.Errorf("calculate audio fingerprint: %w", ctx.Err())
 	}
 	if errors.Is(err, exec.ErrNotFound) {
-		return fingerprint{}, errors.New("fpcalc was not found on PATH; install Chromaprint's fpcalc utility")
+		return fingerprint{}, ErrFPCalcMissing
 	}
 	if err != nil {
 		if detail := strings.TrimSpace(stderr.buffer.String()); detail != "" {

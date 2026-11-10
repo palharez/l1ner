@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/palharez/l1ner/internal/identify"
 )
 
 type fixBatchSummary struct {
@@ -28,7 +30,7 @@ func (s *fixBatchSummary) record(decision reviewDecision) {
 	s.pending--
 }
 
-func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch, choose menuSelector) int {
+func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch, audio audioCandidateSearch, choose menuSelector) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	scan := scanDirectory(path, false)
@@ -43,7 +45,10 @@ func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch,
 			return 1
 		}
 	}
-	summary, err := fixBatch(ctx, scan.paths, out, errOut, paceBatchSearch(search), choose)
+	if audio == nil {
+		search = paceBatchSearch(search)
+	}
+	summary, err := fixBatch(ctx, scan.paths, out, errOut, search, audio, choose)
 	code := 0
 	switch {
 	case errors.Is(err, errPreviewCanceled) || errors.Is(err, context.Canceled):
@@ -67,8 +72,16 @@ func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch,
 	return code
 }
 
-func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search recordingSearch, choose menuSelector) (fixBatchSummary, error) {
+func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search recordingSearch, audio audioCandidateSearch, choose menuSelector) (fixBatchSummary, error) {
 	summary := fixBatchSummary{pending: len(paths)}
+	if err := ctx.Err(); err != nil {
+		return summary, err
+	}
+	if audio != nil && len(paths) != 0 {
+		if _, err := acoustIDApplicationKey(); err != nil {
+			return summary, err
+		}
+	}
 	for i, path := range paths {
 		if err := ctx.Err(); err != nil {
 			return summary, err
@@ -76,7 +89,7 @@ func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search
 		if _, err := fmt.Fprintf(out, "\nSong %d of %d\n", i+1, len(paths)); err != nil {
 			return summary, err
 		}
-		decision, err := fixSong(ctx, path, out, search, nil, choose)
+		decision, err := fixSong(ctx, path, out, search, audio, choose)
 		if err == nil {
 			if decision == reviewQuit {
 				_, err := fmt.Fprintln(out, "Review ended.")
@@ -90,7 +103,8 @@ func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search
 			summary.record(decision)
 		}
 		var uiErr reviewUIError
-		if errors.Is(err, errPreviewCanceled) || errors.Is(err, context.Canceled) || errors.As(err, &uiErr) {
+		if errors.Is(err, errPreviewCanceled) || errors.Is(err, context.Canceled) ||
+			errors.Is(err, identify.ErrFPCalcMissing) || errors.As(err, &uiErr) {
 			return summary, err
 		}
 		summary.failed++

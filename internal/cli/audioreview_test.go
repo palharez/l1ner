@@ -46,7 +46,7 @@ func TestFixFromAudioTerminal(t *testing.T) {
 					}
 					return []identify.Candidate{{RecordingID: "id", Title: "Title", Artist: "Artist", Score: 0.99}}, nil
 				}
-				exit <- runSongReview("fix", []string{"--from-audio", path}, terminal, terminal, &errOut, nil, search)
+				exit <- runSongReview("fix", []string{"--from-audio", path}, terminal, terminal, &errOut, nil, search, nil)
 			}()
 			ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 			defer cancel()
@@ -111,13 +111,11 @@ func TestFixFromAudioTerminal(t *testing.T) {
 	}
 }
 
-func TestAudioReviewRejectsDirectory(t *testing.T) {
-	for _, command := range []string{"preview", "fix"} {
-		var out, errOut bytes.Buffer
-		code := Run([]string{command, "--from-audio", t.TempDir()}, nil, &out, &errOut)
-		if code != 2 || out.Len() != 0 || !strings.Contains(errOut.String(), "--from-audio requires one MP3 file") {
-			t.Errorf("%s exit = %d, stdout = %q, stderr = %q", command, code, &out, &errOut)
-		}
+func TestAudioPreviewRejectsDirectory(t *testing.T) {
+	var out, errOut bytes.Buffer
+	code := Run([]string{"preview", "--from-audio", t.TempDir()}, nil, &out, &errOut)
+	if code != 2 || out.Len() != 0 || !strings.Contains(errOut.String(), "--from-audio requires one MP3 file") {
+		t.Errorf("exit = %d, stdout = %q, stderr = %q", code, &out, &errOut)
 	}
 }
 
@@ -164,7 +162,7 @@ func TestPreviewFromAudioTerminal(t *testing.T) {
 				{RecordingID: "live", Title: "Song (Live)", Artist: "Artist", Score: 0.97},
 			}, nil
 		}
-		exit <- runSongReview("preview", []string{"--from-audio", path}, terminal, terminal, &errOut, nil, audio)
+		exit <- runSongReview("preview", []string{"--from-audio", path}, terminal, terminal, &errOut, nil, audio, nil)
 	}()
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()

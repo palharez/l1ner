@@ -40,14 +40,14 @@ type songReview struct {
 	proposal songProposal
 }
 
-func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search recordingSearch, audio audioCandidateSearch) int {
+func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search recordingSearch, audio, batchAudio audioCandidateSearch) int {
 	syntax := previewSyntax
-	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change.\nUse --from-audio to search AcoustID instead. See 'l1ner identify --help' for setup."
+	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change.\nUse --from-audio to search AcoustID. See 'l1ner identify --help' for setup."
 	canceled := "Preview canceled."
 	reviewFile := previewFile
 	if command == "fix" {
 		syntax = fixSyntax
-		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory.\nUse --from-audio for one MP3. See 'l1ner identify --help' for AcoustID setup."
+		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory.\nUse --from-audio to look up recordings with AcoustID. See 'l1ner identify --help' for setup."
 		canceled = "Fix canceled."
 		reviewFile = fixFile
 	}
@@ -67,7 +67,7 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		info, err := os.Stat(path)
 		isDirectory = err == nil && info.IsDir()
 	}
-	if fromAudio && isDirectory {
+	if command == "preview" && fromAudio && isDirectory {
 		reportError(errOut, errors.New("--from-audio requires one MP3 file"))
 		return 2
 	}
@@ -85,7 +85,10 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		return choice, err
 	}
 	if isDirectory {
-		return runFixDirectory(path, out, errOut, search, choose)
+		if !fromAudio {
+			batchAudio = nil
+		}
+		return runFixDirectory(path, out, errOut, search, batchAudio, choose)
 	}
 	if fromAudio {
 		err = reviewFileFromAudio(command, path, out, audio, choose)

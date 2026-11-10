@@ -9,9 +9,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/palharez/l1ner/internal/identify"
 )
 
 func TestFixDirectoryTerminal(t *testing.T) {
@@ -157,11 +160,11 @@ func TestFixDirectoryEmptyOrSymlink(t *testing.T) {
 		return nil, nil
 	}
 	var out, errOut bytes.Buffer
-	if code := runFixDirectory(dir, &out, &errOut, search, nil); code != 0 || !strings.Contains(out.String(), "No MP3 files found.") || errOut.Len() != 0 {
+	if code := runFixDirectory(dir, &out, &errOut, search, nil, nil); code != 0 || !strings.Contains(out.String(), "No MP3 files found.") || errOut.Len() != 0 {
 		t.Errorf("empty directory exit = %d, stdout = %q, stderr = %q", code, &out, &errOut)
 	}
 	out.Reset()
-	if code := runFixDirectory(link, &out, &errOut, search, nil); code != 1 || !strings.Contains(errOut.String(), "directory path is a symbolic link") {
+	if code := runFixDirectory(link, &out, &errOut, search, nil, nil); code != 1 || !strings.Contains(errOut.String(), "directory path is a symbolic link") {
 		t.Errorf("symlink directory exit = %d, stdout = %q, stderr = %q", code, &out, &errOut)
 	}
 }
@@ -196,9 +199,117 @@ func TestFixBatchCancellationKeepsEarlierApproval(t *testing.T) {
 		return 0, nil
 	}
 	var out, errOut bytes.Buffer
-	summary, err := fixBatch(ctx, paths, &out, &errOut, search, choose)
+	summary, err := fixBatch(ctx, paths, &out, &errOut, search, nil, choose)
 	if !errors.Is(err, context.Canceled) || summary != (fixBatchSummary{applied: 1, pending: 2}) || errOut.Len() != 0 {
 		t.Errorf("summary = %+v, error = %v, stderr = %q", summary, err, &errOut)
 	}
 	assertBatchFiles(t, originals, paths[0])
+}
+
+func TestFixDirectoryFromAudioTerminal(t *testing.T) {
+	t.Setenv("L1NER_ACOUSTID_KEY", "test-key")
+	dir := t.TempDir()
+	files := []string{"a-apply.MP3", "b-skip.mp3", "c-fail.mp3", "d-unchanged.mp3", "e-unresolved.mp3", "f-quit.mp3", "g-pending.mp3"}
+	audio := []byte{0xff, 0xfb, 0x90, 0, 1, 2, 3}
+	originals := make(map[string][]byte)
+	for i := len(files) - 1; i >= 0; i-- {
+		path := filepath.Join(dir, files[i])
+		if files[i] == "d-unchanged.mp3" {
+			originals[path] = writeBatchSong(t, path, "Corrected title")
+			continue
+		}
+		if err := os.WriteFile(path, audio, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		originals[path] = audio
+	}
+	var searched []string
+	search := func(_ context.Context, file *os.File, key string) ([]identify.Candidate, error) {
+		name := filepath.Base(file.Name())
+		searched = append(searched, name)
+		if key != "test-key" {
+			t.Errorf("unexpected key %q", key)
+		}
+		switch name {
+		case "c-fail.mp3":
+			return nil, errors.New("AcoustID is busy (HTTP 503)")
+		case "e-unresolved.mp3":
+			return nil, nil
+		}
+		return []identify.Candidate{{RecordingID: "recording", Title: "Corrected title", Artist: "Artist", Score: 0.99}}, nil
+	}
+	master, terminal := previewTestTerminal(t)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	var errOut bytes.Buffer
+	exit := make(chan int, 1)
+	go func() {
+		exit <- runSongReview("fix", []string{"--from-audio", dir}, terminal, terminal, &errOut, nil, nil, search)
+	}()
+	for _, step := range []struct{ wait, keys string }{
+		{"? Choose a recording", "\r"},
+		{"❯ Skip song", "\x1b[B\r"},
+		{"Applied approved tags", ""},
+		{"? Choose a recording", "\r"},
+		{"❯ Skip song", "\r"},
+		{"Skipped song.", ""},
+		{"? Choose a recording", "\r"},
+		{"The title and artist already agree.", ""},
+		{"No AcoustID recording candidates with both title and artist found.", ""},
+		{"? Choose a recording", "\x1b[A\r"},
+		{"Summary: 1 applied, 1 skipped, 1 unchanged, 1 unresolved, 1 failed, 2 pending", ""},
+	} {
+		readPreviewOutput(t, ctx, master, step.wait)
+		if _, err := io.WriteString(master, step.keys); err != nil {
+			t.Fatal(err)
+		}
+	}
+	select {
+	case code := <-exit:
+		if code != 1 || !strings.Contains(errOut.String(), "c-fail.mp3") || !strings.Contains(errOut.String(), "HTTP 503") {
+			t.Errorf("exit = %d, stderr = %q, want one service failure", code, &errOut)
+		}
+	case <-ctx.Done():
+		t.Fatal("batch did not exit")
+	}
+	if !slices.Equal(searched, files[:6]) {
+		t.Errorf("lookups = %v, want %v", searched, files[:6])
+	}
+	applied := filepath.Join(dir, files[0])
+	assertBatchFiles(t, originals, applied)
+	data, err := os.ReadFile(applied)
+	if err != nil {
+		t.Fatal(err)
+	}
+	header, body, err := readTag(bytes.NewReader(data), int64(len(data)))
+	if err != nil || len(header) != tagHeaderSize || header[3] != 4 || !bytes.Equal(data[len(header)+len(body):], audio) {
+		t.Errorf("expected an ID3v2.4 tag followed by the original audio, got %x (%v)", data, err)
+	}
+}
+
+func TestFixBatchFromAudioSetupErrors(t *testing.T) {
+	paths := []string{filepath.Join(t.TempDir(), "a.mp3"), filepath.Join(t.TempDir(), "b.mp3")}
+	for _, path := range paths {
+		writeBatchSong(t, path, "Song")
+	}
+	for _, key := range []string{"", "test-key"} {
+		t.Setenv("L1NER_ACOUSTID_KEY", key)
+		calls := 0
+		search := func(context.Context, *os.File, string) ([]identify.Candidate, error) {
+			calls++
+			return nil, identify.ErrFPCalcMissing
+		}
+		var out, errOut bytes.Buffer
+		summary, err := fixBatch(t.Context(), paths, &out, &errOut, nil, search, nil)
+		if summary != (fixBatchSummary{pending: 2}) || err == nil || errOut.Len() != 0 {
+			t.Errorf("summary = %+v, error = %v, stderr = %q", summary, err, &errOut)
+		}
+		if key == "" {
+			if calls != 0 || err == nil || !strings.Contains(err.Error(), "L1NER_ACOUSTID_KEY") {
+				t.Errorf("missing key caused %d calls and error %v", calls, err)
+			}
+		} else if calls != 1 || !errors.Is(err, identify.ErrFPCalcMissing) {
+			t.Errorf("missing fpcalc caused %d calls and error %v", calls, err)
+		}
+	}
 }
