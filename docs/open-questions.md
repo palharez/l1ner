@@ -2,7 +2,7 @@
 
 **Status:** Inspection decisions implemented; broader product questions remain open.
 
-This tracker accompanies the [product vision](vision.md). Checked items record decisions already made; unchecked items are future questions. Go has been selected as the implementation language for the Linux-only first MVP. The first MVP uses `github.com/bogem/id3v2/v2` for metadata reading. External services remain undecided and outside the first MVP.
+This tracker accompanies the [product vision](vision.md). Checked items record decisions, and unchecked items track future questions. The Linux-only inspection MVP uses Go and `github.com/bogem/id3v2/v2` for metadata reading. The first external integration is the planned [MusicBrainz lookup](#first-provider--musicbrainz).
 
 Use the checklist to track progress. When a question is resolved, record the decision, rationale, and any supporting evidence beneath it before marking it complete.
 
@@ -22,7 +22,7 @@ Use the checklist to track progress. When a question is resolved, record the dec
 
   **Decision:** Show only metadata tags present in the file. Do not add placeholders for absent fields. If no metadata is present, display `No metadata found`.
 
-  **Broader product direction:** Expose all metadata made available by future services as well. External lookups remain outside the first MVP unless its scope is explicitly expanded; no providers have been selected.
+  **Broader product direction:** Expose metadata made available by future services. The [first lookup milestone](#first-provider--musicbrainz) starts with a recording candidate list.
 
 - [x] What command syntax and terminal layout should the first MVP use?
 
@@ -119,6 +119,18 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 - [ ] How should the CLI be packaged and distributed across operating systems?
 
 ## External Services
+
+### First provider — MusicBrainz
+
+- [x] Which provider and data should the first lookup use?
+
+  **Decision:** A separate, explicitly invoked `lookup` command sends the embedded title and artist of one MP3 to MusicBrainz and displays up to five recording candidates for human review. The file path, audio, and other tags stay local. Keep inspection offline and the music file read-only. See the [implementation checklist](../TODO.md#milestone--musicbrainz-lookup).
+
+- [x] What are the first provider's access requirements?
+
+  **Decision:** Use MusicBrainz public recording search. The hosted API permits free non-commercial use and requires a meaningful `User-Agent` and a maximum of one request per second. Public search requires no API key. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API) · [Rate limiting](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)
+
+### Broader provider questions
 
 - [ ] Which metadata providers offer the most reliable and comprehensive information?
 - [ ] What are their API limits and licensing requirements?
