@@ -41,6 +41,10 @@ The built CLI ran in a Linux pseudo-terminal with a generated ID3v2.3 fixture ta
 
 The built CLI ran in a Linux pseudo-terminal on a disposable copy of “My Home Town” with a lowercase title tag. The wizard showed the MusicBrainz title as the only change, then applied it after explicit approval. Inspection showed `My Home Town`. An independent byte comparison confirmed that all other frames and the audio and trailing bytes were preserved. The backup matched the pre-edit copy byte for byte, and moving it back restored those exact bytes. The reference MP3 in `music/` was unchanged.
 
+## Folder fixes
+
+The built CLI ran in a Linux pseudo-terminal on four disposable copies of “My Home Town” with lowercase title tags. The live review applied the first proposal, skipped the second, and quit on the third. The summary reported one applied, one skipped, and two pending. The applied file retained its audio bytes and had a byte-for-byte backup. The other copies and the reference MP3 in `music/` stayed unchanged, and the terminal mode was restored.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

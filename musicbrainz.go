@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,7 +22,12 @@ const (
 	musicBrainzTimeout  = 10 * time.Second
 	maxSearchURL        = 4096
 	maxSearchResponse   = 4 << 20
+	musicBrainzInterval = time.Second
 )
+
+var errMusicBrainzCooldown = errors.New("MusicBrainz lookup is rate limited locally; wait a second and try again")
+
+type recordingSearch func(ctx context.Context, title, artist string) ([]recording, error)
 
 type musicBrainzClient struct {
 	endpoint string
@@ -34,7 +40,7 @@ type recording struct {
 	lengthMS                          int64
 }
 
-func searchMusicBrainz(title, artist string) ([]recording, error) {
+func searchMusicBrainz(ctx context.Context, title, artist string) ([]recording, error) {
 	cache, err := os.UserCacheDir()
 	if err != nil {
 		return nil, fmt.Errorf("find MusicBrainz rate limit directory: %w", err)
@@ -44,11 +50,14 @@ func searchMusicBrainz(title, artist string) ([]recording, error) {
 		rateFile: filepath.Join(cache, "l1ner", "musicbrainz-rate"),
 		timeout:  musicBrainzTimeout,
 	}
-	return client.search(title, artist)
+	return client.search(ctx, title, artist)
 }
 
-func (c musicBrainzClient) search(title, artist string) ([]recording, error) {
-	request, err := newRecordingSearchRequest(c.endpoint, title, artist)
+func (c musicBrainzClient) search(ctx context.Context, title, artist string) ([]recording, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	request, err := newRecordingSearchRequest(ctx, c.endpoint, title, artist)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +75,7 @@ func (c musicBrainzClient) search(title, artist string) ([]recording, error) {
 	return requestRecordings(request, c.timeout)
 }
 
-func newRecordingSearchRequest(endpoint, title, artist string) (*http.Request, error) {
+func newRecordingSearchRequest(ctx context.Context, endpoint, title, artist string) (*http.Request, error) {
 	if len(title)+len(artist) > maxSearchURL {
 		return nil, errors.New("title and artist tags are too long for MusicBrainz lookup")
 	}
@@ -81,7 +90,7 @@ func newRecordingSearchRequest(endpoint, title, artist string) (*http.Request, e
 	if len(searchURL) > maxSearchURL {
 		return nil, errors.New("title and artist tags are too long for MusicBrainz lookup")
 	}
-	request, err := http.NewRequest(http.MethodGet, searchURL, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, searchURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build MusicBrainz request: %w", err)
 	}
@@ -115,11 +124,10 @@ func requestRecordings(request *http.Request, timeout time.Duration) ([]recordin
 }
 
 func reserveMusicBrainzRequest(file *os.File) error {
-	const waitMessage = "MusicBrainz lookup is rate limited locally; wait a second and try again"
-	// Each invocation is a new process. Hold the shared lock until the request ends.
+	// Hold the shared lock until the request ends, including across invocations.
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
 		if errors.Is(err, syscall.EWOULDBLOCK) {
-			return errors.New(waitMessage)
+			return errMusicBrainzCooldown
 		}
 		return fmt.Errorf("lock MusicBrainz rate limit file: %w", err)
 	}
@@ -130,14 +138,44 @@ func reserveMusicBrainzRequest(file *os.File) error {
 	if !info.Mode().IsRegular() {
 		return errors.New("MusicBrainz rate limit file is not a regular file")
 	}
-	if info.Size() != 0 && time.Since(info.ModTime()) < time.Second {
-		return errors.New(waitMessage)
+	if info.Size() != 0 && time.Since(info.ModTime()) < musicBrainzInterval {
+		return errMusicBrainzCooldown
 	}
 	// The single byte distinguishes a new file. Its modification time records the last request.
 	if _, err := file.WriteAt([]byte{1}, 0); err != nil {
 		return fmt.Errorf("update MusicBrainz rate limit file: %w", err)
 	}
 	return nil
+}
+
+// paceBatchSearch is used sequentially by one batch. Leave a full interval
+// after a request ends, since network latency can vary between songs.
+func paceBatchSearch(search recordingSearch) recordingSearch {
+	var next time.Time
+	return func(ctx context.Context, title, artist string) ([]recording, error) {
+		deadline := time.Now().Add(musicBrainzTimeout)
+		for {
+			if delay := time.Until(next); delay > 0 {
+				timer := time.NewTimer(delay)
+				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return nil, ctx.Err()
+				case <-timer.C:
+				}
+			}
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			matches, err := search(ctx, title, artist)
+			next = time.Now().Add(musicBrainzInterval)
+			// A local reservation failure sent no request. Actual service
+			// errors are reported for this song and are never retried here.
+			if !errors.Is(err, errMusicBrainzCooldown) || next.After(deadline) {
+				return matches, err
+			}
+		}
+	}
 }
 
 func decodeRecordings(body io.Reader) ([]recording, error) {

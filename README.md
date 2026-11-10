@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** Inspect MP3s offline, search MusicBrainz, and review or apply title and artist changes for one song in the terminal.
+**Status:** Inspect MP3s offline, search MusicBrainz, and review or apply title and artist changes one song at a time in the terminal.
 
 ## First MVP
 
@@ -129,6 +129,18 @@ mv -i -- music/song.mp3.l1ner.bak music/song.mp3
 ```
 
 Apply, Skip, Quit, and a review with no changes or candidates exit `0`. Input, service, verification, and write failures exit `1`. Invalid arguments exit `2`, and cancellation before replacement exits `130`. If a failure occurs after the backup is published, the backup path is included in the diagnostic.
+
+### Fix a folder
+
+```sh
+./bin/l1ner fix music/
+```
+
+Review the regular `.mp3` files directly inside the folder in lexical order. Extensions are case-insensitive, and symlinks are skipped. The wizard shows progress such as **Song 3 of 20**. **Apply** edits and backs up the displayed song immediately. **Skip** advances to the next song. **Quit** or Ctrl+C preserves earlier approved edits and leaves the current song pending unless its edit already committed.
+
+The batch leaves at least a second between MusicBrainz requests and continues after individual file or service failures. The summary counts applied, skipped, unchanged, unresolved, failed, and pending songs. A lookup with zero candidates is unresolved. An existing backup is a per-file failure, so rerunning the folder preserves backups and starts a new review from the beginning.
+
+An empty folder or a completed or quit batch with zero failures exits `0`. A scan, file, or output failure exits `1`. Ctrl+C exits `130`. Use the same per-song recovery command to restore an applied song.
 
 ## Development
 

@@ -136,4 +136,10 @@ The writer uses an advisory lock and rechecks the path and SHA-256 before replac
 
 The backup is published under an exclusive `.l1ner.bak` name and synced before the verified stage is renamed over the MP3. A failure before rename preserves the original file. If the backup was already published, it remains available for recovery. A directory sync failure after rename is reported as a warning that the replacement was applied. Abrupt termination can leave `.l1ner-stage-*` files beside the MP3. Use the reported backup path for recovery. See the [recovery command](../README.md#fix-one-song).
 
-Packaging, distribution, directory edits, and additional tag formats remain deferred.
+## Folder fixes
+
+`fixbatch.go` uses the existing immediate-directory scan and processes paths sequentially. Each song goes through the same review and verified write path as a single file. The batch paces lookups using a full second after each completed request and waits when the existing local reservation is busy. The wait and HTTP request can be canceled. Service failures are reported for the affected file and the batch continues.
+
+An approved replacement and its backup are kept when the review ends. The batch tracks six outcomes in memory and counts unvisited songs as pending. A terminal or output failure stops further reviews. The [folder usage](../README.md#fix-a-folder) describes scope and exit codes.
+
+Packaging, distribution, recursive editing, and additional tag formats remain deferred.

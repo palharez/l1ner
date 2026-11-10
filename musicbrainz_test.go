@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +14,49 @@ import (
 	"testing"
 	"time"
 )
+
+func TestBatchSearchPacesRequestsAndCancelsWait(t *testing.T) {
+	arrivals := make(chan time.Time, 2)
+	client := testMusicBrainz(t, func(w http.ResponseWriter, r *http.Request) {
+		arrivals <- time.Now()
+		io.WriteString(w, `{"recordings":[]}`)
+	})
+	search := paceBatchSearch(client.search)
+	for _, title := range []string{"First", "Second"} {
+		if _, err := search(t.Context(), title, "Artist"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, second := <-arrivals, <-arrivals
+	if gap := second.Sub(first); gap < musicBrainzInterval {
+		t.Errorf("requests spaced %v apart, want at least %v", gap, musicBrainzInterval)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := search(ctx, "Third", "Artist"); !errors.Is(err, context.Canceled) {
+		t.Errorf("search error = %v, want context canceled", err)
+	}
+	if len(arrivals) != 0 {
+		t.Error("canceled search reached the server")
+	}
+}
+
+func TestBatchSearchWaitsForLocalReservation(t *testing.T) {
+	var requests atomic.Int32
+	client := testMusicBrainz(t, func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		io.WriteString(w, `{"recordings":[]}`)
+	})
+	if _, err := client.search(t.Context(), "Earlier", "Artist"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := paceBatchSearch(client.search)(t.Context(), "First batch song", "Artist"); err != nil {
+		t.Fatal(err)
+	}
+	if got := requests.Load(); got != 2 {
+		t.Errorf("requests = %d, want 2", got)
+	}
+}
 
 func testMusicBrainz(t *testing.T, handler http.HandlerFunc) musicBrainzClient {
 	t.Helper()
@@ -46,7 +91,7 @@ func TestMusicBrainzSearch(t *testing.T) {
 		}
 		io.WriteString(w, `]}`)
 	})
-	matches, err := client.search(`Café "Live" \ Mix`, "A+B & C")
+	matches, err := client.search(t.Context(), `Café "Live" \ Mix`, "A+B & C")
 	if err != nil || len(matches) != 5 {
 		t.Fatalf("search = (%v, %v), want five recordings", matches, err)
 	}
@@ -83,7 +128,7 @@ func TestMusicBrainzSearchOutcomes(t *testing.T) {
 				w.WriteHeader(tc.status)
 				io.WriteString(w, tc.body)
 			})
-			matches, err := client.search("Title", "Artist")
+			matches, err := client.search(t.Context(), "Title", "Artist")
 			if tc.error == "" {
 				if err != nil || len(matches) != 0 {
 					t.Errorf("search = (%v, %v), want empty results", matches, err)
@@ -102,7 +147,7 @@ func TestMusicBrainzTimeout(t *testing.T) {
 		<-r.Context().Done()
 	})
 	client.timeout = 50 * time.Millisecond
-	_, err := client.search("Private title", "Artist")
+	_, err := client.search(t.Context(), "Private title", "Artist")
 	if err == nil || !strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "Private") {
 		t.Errorf("search error = %v, want timeout without the query", err)
 	}
@@ -125,7 +170,7 @@ func TestMusicBrainzRateLimit(t *testing.T) {
 	if err := reserveMusicBrainzRequest(file); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.search("Title", "Artist"); err == nil || !strings.Contains(err.Error(), "rate limited locally") {
+	if _, err := client.search(t.Context(), "Title", "Artist"); err == nil || !strings.Contains(err.Error(), "rate limited locally") {
 		t.Errorf("search with held lock = %v, want local rate limit error", err)
 	}
 	if err := file.Close(); err != nil {
@@ -135,7 +180,7 @@ func TestMusicBrainzRateLimit(t *testing.T) {
 	if err := os.Chtimes(client.rateFile, now, now); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.search("Title", "Artist"); err == nil || !strings.Contains(err.Error(), "rate limited locally") {
+	if _, err := client.search(t.Context(), "Title", "Artist"); err == nil || !strings.Contains(err.Error(), "rate limited locally") {
 		t.Errorf("search after recent request = %v, want local rate limit error", err)
 	}
 	if got := requests.Load(); got != 0 {
@@ -145,7 +190,7 @@ func TestMusicBrainzRateLimit(t *testing.T) {
 	if err := os.Chtimes(client.rateFile, earlier, earlier); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.search("Title", "Artist"); err != nil {
+	if _, err := client.search(t.Context(), "Title", "Artist"); err != nil {
 		t.Errorf("search after cooldown = %v", err)
 	}
 	if got := requests.Load(); got != 1 {
