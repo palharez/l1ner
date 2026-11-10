@@ -171,7 +171,11 @@ func malformedFrameCases(version byte) []malformedFrameCase {
 			body: frame(version, id, []byte{0, 'A'}), message: "malformed ID3 frame identifier",
 		})
 	}
-	for _, size := range []uint32{3, 0x0fffffff} {
+	sizes := []uint32{3, 0x0fffffff}
+	if version == 3 {
+		sizes = append(sizes, 0x80000000)
+	}
+	for _, size := range sizes {
 		oversized := frame(version, "TIT2", []byte{0, 'A'})
 		binary.BigEndian.PutUint32(oversized[4:8], size)
 		if version == 4 {

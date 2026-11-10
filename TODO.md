@@ -10,6 +10,7 @@ The implemented CLI inspects local MP3 files and directories on Linux, read-only
 - [x] Expand inspection tests for truncated frame headers, invalid identifiers and sizes, unsupported frame flags, malformed padding, and the tag-size limit. Verify clear failures and unchanged input files.
 - [x] Validate against additional legally usable MP3 samples and document observed parser limitations. Keep personal audio in the ignored `music/` directory; use generated fixtures for automated tests. See [20-file validation results](docs/sample-validation.md) and the [download manifest](docs/mp3-samples.tsv).
 - [x] Reconcile the question tracker and technical plan with implementation findings, separating completed decisions from unresolved work.
+- [x] Add a parser fuzz target for tag reading and frame decoding, and run a one-minute local session.
 
 ## Decide the next milestone together
 

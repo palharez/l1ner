@@ -12,6 +12,14 @@ The saved results cover ID3v2.3.0 files with the same general metadata layout: a
 
 The earlier recursive directory check reported `Summary: 20 inspected, 0 failed, 0 scan errors`, with whole-file checksums unchanged. This is a local validation record, not a claim that CI downloaded or tested this collection.
 
+## JSON review
+
+The recursive JSON inspection returned 20 successful file results with no scan errors. All files matched the manifest before inspection, and their sizes, permissions, and SHA-256 checksums were unchanged afterward.
+
+Each result included a title, artist, album, and track number. “My Home Town” was tagged as *Revisited*, while the other 19 were tagged as *The Remains of Tom Lehrer*. The title “She’s My Girl” retained its curly apostrophe, which is absent from the filename. All 20 `YEAR` frames appeared as 23-byte unknown entries.
+
+The raw report spanned 731 lines. For per-song review, the tagged title, artist, album, track number, and file path provide a compact starting view. The album field gives context to the track number, and the file path identifies the exact input even when the filename differs from the tagged title.
+
 ## Limits of this collection
 
 One artist, one album family, and one tag version do not form a representative music library. This collection does not establish coverage for ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, or unsupported flags. Generated tests cover those supported and rejected cases independently of the downloads. Recognition accuracy and service matching have not been evaluated because the CLI performs no identification or lookups.

@@ -59,6 +59,14 @@ These inspection tests cover both supported ID3 versions, assert exact stdout/st
 
 For refactors, preserve existing output, error messages, exit codes, and unchanged input files. Add regression coverage when changing parsing boundaries or fixing a bug. Initial dependency setup may require network access; inspection itself must stay offline.
 
+### Parser fuzzing
+
+`FuzzInspectTag` uses generated ID3v2.3 and ID3v2.4 fixtures to exercise tag reading and frame decoding in memory. It accepts parse errors for malformed inputs and checks that the parser does not panic. `go test ./...` runs the seed inputs. To run a one-minute fuzzing session locally, use:
+
+```sh
+go test -run='^$' -fuzz='^FuzzInspectTag$' -fuzztime=1m -parallel=2 .
+```
+
 ## Continuous integration
 
 [CI](.github/workflows/ci.yml) runs formatting checks, dependency verification, tests, vet, and a build in one standard Ubuntu job. It reads the Go version from `go.mod`. Tests use generated fixtures and do not require `music/`.

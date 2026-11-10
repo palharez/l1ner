@@ -51,7 +51,8 @@ func parseFrameHeader(body []byte, version byte) (frameHeader, error) {
 	if err != nil {
 		return frameHeader{}, err
 	}
-	if bodySize == 0 || bodySize > len(body)-frameHeaderSize {
+	// A large ID3v2.3 size can become negative when converted to int on 32-bit systems.
+	if bodySize <= 0 || bodySize > len(body)-frameHeaderSize {
 		return frameHeader{}, fmt.Errorf("malformed %s frame size", id)
 	}
 	if body[9] != 0 {
