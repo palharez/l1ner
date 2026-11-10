@@ -28,7 +28,7 @@ type fixTarget struct {
 	tags         songTags
 }
 
-func openFixTarget(path string) (_ *fixTarget, err error) {
+func openFixTarget(path string, fromAudio bool) (_ *fixTarget, err error) {
 	if !strings.EqualFold(filepath.Ext(path), ".mp3") {
 		return nil, fmt.Errorf("expected an MP3 file: %s", path)
 	}
@@ -62,7 +62,7 @@ func openFixTarget(path string) (_ *fixTarget, err error) {
 		return nil, err
 	}
 	target := &fixTarget{path: path, name: name, dir: dir, file: file, info: info}
-	if err := target.readOriginal(); err != nil {
+	if err := target.readOriginal(fromAudio); err != nil {
 		return nil, err
 	}
 	return target, nil
@@ -93,7 +93,7 @@ func checkFileAttributes(file *os.File) error {
 	return nil
 }
 
-func (t *fixTarget) readOriginal() error {
+func (t *fixTarget) readOriginal(fromAudio bool) error {
 	if _, err := t.dir.Lstat(t.name + backupSuffix); err == nil {
 		return fmt.Errorf("backup already exists: %s", t.path+backupSuffix)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -103,16 +103,20 @@ func (t *fixTarget) readOriginal() error {
 	if err != nil {
 		return err
 	}
-	if header == nil {
+	if header == nil && !fromAudio {
 		return errors.New("fix requires an existing ID3v2 tag with title and artist")
 	}
 	entries, err := parseFrames(header, body)
 	if err != nil {
 		return err
 	}
-	t.tags, err = lookupTagsFromEntries(entries)
-	if err != nil {
-		return err
+	if fromAudio {
+		t.tags = tagsForAudioReview(entries)
+	} else {
+		t.tags, err = lookupTagsFromEntries(entries)
+		if err != nil {
+			return err
+		}
 	}
 	t.digest, err = hashFileSection(t.file, 0, t.info.Size())
 	if err != nil {

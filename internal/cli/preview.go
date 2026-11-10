@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"text/tabwriter"
 
 	"golang.org/x/term"
@@ -49,7 +47,7 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 	reviewFile := previewFile
 	if command == "fix" {
 		syntax = fixSyntax
-		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory."
+		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory.\nUse --from-audio for one MP3. See 'l1ner identify --help' for AcoustID setup."
 		canceled = "Fix canceled."
 		reviewFile = fixFile
 	}
@@ -62,6 +60,15 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 	if err != nil {
 		reportError(errOut, err)
 		fmt.Fprintln(errOut, "Usage: "+syntax)
+		return 2
+	}
+	isDirectory := false
+	if command == "fix" || fromAudio {
+		info, err := os.Stat(path)
+		isDirectory = err == nil && info.IsDir()
+	}
+	if fromAudio && isDirectory {
+		reportError(errOut, errors.New("--from-audio requires one MP3 file"))
 		return 2
 	}
 	input, inputIsFile := in.(*os.File)
@@ -77,18 +84,11 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		}
 		return choice, err
 	}
-	if command == "fix" {
-		if info, err := os.Stat(path); err == nil && info.IsDir() {
-			return runFixDirectory(path, out, errOut, search, choose)
-		}
+	if isDirectory {
+		return runFixDirectory(path, out, errOut, search, choose)
 	}
 	if fromAudio {
-		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-		defer stop()
-		err = previewFromAudio(ctx, path, out, audio, choose)
-		if errors.Is(err, context.Canceled) {
-			err = errPreviewCanceled
-		}
+		err = reviewFileFromAudio(command, path, out, audio, choose)
 	} else {
 		err = reviewFile(path, out, search, choose)
 	}

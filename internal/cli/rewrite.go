@@ -13,6 +13,9 @@ import (
 // rewriteTag changes only the approved text frames. A whole-tag library save
 // would lose repeated frames and reserialize frames that the user did not edit.
 func rewriteTag(header, body []byte, proposal songProposal) ([]byte, error) {
+	if header == nil {
+		header = []byte{'I', 'D', '3', 4, 0, 0, 0, 0, 0, 0}
+	}
 	if len(header) != tagHeaderSize || (header[3] != 3 && header[3] != 4) || header[4] != 0 || header[5] != 0 {
 		return nil, errors.New("fix requires an ID3v2.3.0 or ID3v2.4.0 tag")
 	}
@@ -44,10 +47,10 @@ func rewriteTag(header, body []byte, proposal songProposal) ([]byte, error) {
 		if frame.id == "CHAP" || frame.id == "ASPI" || frame.id == "RBUF" {
 			offsetFrame = frame.id
 		}
-		updated, ok := replacements[frame.id]
-		if !ok {
-			updated = original
-		} else {
+		replacement, ok := replacements[frame.id]
+		updated := original
+		if ok {
+			updated = replacement.data
 			found[frame.id] = true
 		}
 		if len(updated) > maxTagSize+tagHeaderSize-len(tag) {
@@ -55,8 +58,18 @@ func rewriteTag(header, body []byte, proposal songProposal) ([]byte, error) {
 		}
 		tag = append(tag, updated...)
 	}
-	if len(found) != len(replacements) {
-		return nil, errors.New("approved fields are missing from the original tag")
+	for _, id := range []string{"TIT2", "TPE1"} {
+		replacement, ok := replacements[id]
+		if !ok || found[id] {
+			continue
+		}
+		if !replacement.missing {
+			return nil, errors.New("approved fields are missing from the original tag")
+		}
+		if len(replacement.data) > maxTagSize+tagHeaderSize-len(tag) {
+			return nil, errors.New("edited tag exceeds the inspection size limit")
+		}
+		tag = append(tag, replacement.data...)
 	}
 	// Reuse padding when possible, keeping existing absolute audio offsets valid.
 	if originalSize := len(header) + len(body); len(tag) < originalSize {
@@ -68,8 +81,13 @@ func rewriteTag(header, body []byte, proposal songProposal) ([]byte, error) {
 	return tag, nil
 }
 
-func approvedTextFrames(version byte, proposal songProposal) (map[string][]byte, error) {
-	replacements := make(map[string][]byte)
+type approvedFrame struct {
+	data    []byte
+	missing bool
+}
+
+func approvedTextFrames(version byte, proposal songProposal) (map[string]approvedFrame, error) {
+	replacements := make(map[string]approvedFrame)
 	for _, field := range []struct {
 		id  string
 		tag tagComparison
@@ -88,7 +106,7 @@ func approvedTextFrames(version byte, proposal songProposal) (map[string][]byte,
 		} else {
 			binary.BigEndian.PutUint32(frame[4:8], uint32(len(text)))
 		}
-		replacements[field.id] = append(frame, text...)
+		replacements[field.id] = approvedFrame{data: append(frame, text...), missing: len(field.tag.current) == 0}
 	}
 	return replacements, nil
 }

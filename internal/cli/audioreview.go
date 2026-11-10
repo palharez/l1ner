@@ -2,9 +2,11 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -13,6 +15,22 @@ import (
 )
 
 type audioCandidateSearch func(context.Context, *os.File, string) ([]identify.Candidate, error)
+
+func reviewFileFromAudio(command, path string, out io.Writer, search audioCandidateSearch, choose menuSelector) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	var err error
+	if command == "fix" {
+		decision, fixErr := fixSong(ctx, path, out, nil, search, choose)
+		err = finishSingleFix(out, decision, fixErr)
+	} else {
+		err = previewFromAudio(ctx, path, out, search, choose)
+	}
+	if errors.Is(err, context.Canceled) {
+		return errPreviewCanceled
+	}
+	return err
+}
 
 func previewFromAudio(ctx context.Context, path string, out io.Writer, search audioCandidateSearch, choose menuSelector) error {
 	if !strings.EqualFold(filepath.Ext(path), ".mp3") {

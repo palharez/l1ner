@@ -35,14 +35,14 @@ func runLookup(args []string, out, errOut io.Writer, search recordingSearch) int
 func parseSongPath(command string, args []string) (path string, fromAudio bool, err error) {
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	if command == "preview" {
+	if command == "preview" || command == "fix" {
 		flags.BoolVar(&fromAudio, "from-audio", false, "use AcoustID fingerprint matches")
 	}
 	if err := flags.Parse(args); err != nil {
 		return "", false, err
 	}
 	if flags.NArg() != 1 {
-		if command == "fix" {
+		if command == "fix" && !fromAudio {
 			return "", false, errors.New("expected one MP3 file or directory path")
 		}
 		return "", false, errors.New("expected one MP3 file path")

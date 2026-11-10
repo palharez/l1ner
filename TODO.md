@@ -77,7 +77,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 **Branch** `milestone/audio-assisted-fix`. Use `--from-audio` on `preview` and `fix` to review one MP3 using AcoustID. The existing tag-based commands work without AcoustID setup.
 
 1. [x] Connect the fingerprint matches to the read-only preview. Show missing fields and require selection of a recording. Verify in the terminal with generated fixtures. Commit as `feat(preview): review fingerprint matches for one song`.
-2. [ ] Connect audio review to the verified writer. Add missing fields or create a tag for an untagged MP3 only after Apply. Check audio integrity, exact backups, and unchanged files when skipped. Commit as `feat(fix): apply approved audio matches to one song`.
+2. [x] Connect audio review to the verified writer. Add missing fields or create a tag for an untagged MP3 only after Apply. Check audio integrity, exact backups, and unchanged files when skipped. Commit as `feat(fix): apply approved audio matches to one song`.
 3. [ ] Run the contributor checks and exercise the built CLI on a disposable tagless MP3. Document the result and open the milestone PR. Commit as `docs(fix): document and validate audio-assisted repair`.
 
 ## Future directions — not committed scope
