@@ -46,6 +46,15 @@ Batch lookup, fingerprinting, release selection, and metadata writing are future
 2. [x] **Add the interactive review.** Validate that input and output are terminals before searching. Reuse the existing search and rate limit. Show candidate IDs and available version details, then present the proposal and review choices. Verify selection, changing candidates, accepting, skipping, quitting, and cancellation. Commit as `feat(preview): add interactive song review`.
 3. [x] **Verify and document the milestone.** Tests use generated MP3s and a local MusicBrainz server. The [live terminal check](docs/sample-validation.md#interactive-preview) confirmed acceptance, terminal restoration, and an unchanged checksum. See the [usage](README.md#interactive-song-preview) and [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(preview): document and validate song review`.
 
+## Milestone — Safe single-song fix
+
+**Branch** `milestone/single-song-fix`. `l1ner fix <file.mp3>` uses the existing MusicBrainz review. The displayed title and artist changes are applied only after explicit approval for that song. Skip and Quit leave it intact.
+
+1. [x] **Rewrite approved ID3 frames.** Keep the existing tag version and preserve every unrelated frame and the audio. Test ID3v2.3 and ID3v2.4, repeated frames, Unicode, and unsupported features. Commit as `feat(fix): rewrite approved title and artist frames`.
+2. [ ] **Stage and verify the replacement.** Work in the source directory, reject unsafe file layouts, check that the reviewed file has stayed the same, verify the staged tags and audio, and publish an exact `.l1ner.bak` backup before replacement. Test restoration, backup collisions, and failures. Commit as `feat(fix): verify and back up song edits`.
+3. [ ] **Connect the wizard to the writer.** Make Apply an explicit choice with Skip highlighted, and test approval, skip, quit, cancellation, and the applied result through the terminal command. Commit as `feat(fix): apply approved single-song changes`.
+4. [ ] **Verify and document the milestone.** Run the contributor checks and try the built binary on a disposable fixture. Document usage and recovery, then open a PR for review. Commit as `docs(fix): document single-song edits and recovery`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
