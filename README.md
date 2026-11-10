@@ -107,7 +107,7 @@ Keep local MP3 files in `music/`. This directory is ignored by Git, so audio fil
 
 The starting reference is Tom Lehrer's “When You Are Old and Gray.” Download details, source metadata, and reuse terms are recorded in the [reference file notes](docs/open-questions.md#broader-product--product-validation).
 
-The collection now includes 20 local MP3 samples. See the [validation results](docs/sample-validation.md) for observed parser limitations and the [download manifest](docs/mp3-samples.tsv) for sources and checksums.
+The documented local validation collection contains 20 MP3 samples from one artist and album family; it is not a representative library. See the [validation results](docs/sample-validation.md) for observed parser limitations and the [download manifest](docs/mp3-samples.tsv) for sources and checksums.
 
 ## Documentation
 
@@ -115,6 +115,7 @@ The collection now includes 20 local MP3 samples. See the [validation results](d
 - [Product vision](docs/vision.md): concept, principles, MVP scope, and success criteria.
 - [Open questions](docs/open-questions.md): agreed decisions and questions for later phases.
 - [Technical plan](docs/technical-plan.md): library selection, read-only workflow, and validation approach.
+- [Sample validation](docs/sample-validation.md): local observations, provenance, and coverage limits.
 
 ## Contributing
 

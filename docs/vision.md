@@ -33,7 +33,7 @@ As a result, users may own their music files but still struggle to maintain an a
 
 l1ner aims to automate the identification and metadata enrichment of existing music files.
 
-Beyond the first MVP, the tool should allow users to:
+The broader workflow includes implemented inspection and future enrichment capabilities:
 
 1. Scan individual music files or entire directories.
 2. Inspect existing metadata and detect missing or potentially inconsistent information.
@@ -59,7 +59,7 @@ l1ner is intended for:
 
 ### Primary User and Core Workflow
 
-The initial focus is a person who wants to inspect the metadata already present in a local MP3 file. The first MVP workflow is to provide one file path to the CLI and read its metadata in the terminal.
+The initial focus is a person who wants to inspect metadata already present in local MP3 files. The first MVP accepts a file path; its implemented extension accepts a directory with optional recursive scanning.
 
 The longer-term workflow is: inspect a collection, review candidate matches and proposed changes, approve changes, and use the enriched files in an existing music player. Users should be able to leave unresolved files untouched and still complete useful work on the rest of the collection.
 
@@ -109,7 +109,7 @@ Write metadata directly into supported audio files without altering their underl
 
 The system should prioritize predictable and reversible operations wherever technically feasible.
 
-Users must be able to preview changes before applying them.
+Users must be able to preview proposed changes for each song and explicitly accept them before that file is modified.
 
 ### 5.6 Batch Processing
 
@@ -158,7 +158,7 @@ The first MVP is a Linux CLI written in Go that reads metadata already present i
 ### Included
 
 - Run from source on the user's local Linux machine.
-- Accept a path to a single local MP3 file through `l1ner inspect <file-path>`; this describes the CLI interface, with the source-based invocation to be documented during implementation.
+- Accept a path to a single local MP3 file through `l1ner inspect <file-path>`; run it from source with `go run . inspect <file-path>`.
 - Read existing ID3v2.3 and ID3v2.4 metadata the reader can expose, including custom fields, rather than a fixed shortlist.
 - Clearly report unsupported tag versions; ID3v1 and ID3v2.2 support is deferred.
 - Display the file path first, followed by readable `Tag: Value` lines. Display text metadata in full, custom tags by name, and all repeated values.
@@ -166,7 +166,7 @@ The first MVP is a Linux CLI written in Go that reads metadata already present i
 - Show only metadata tags present in the file, without placeholders for absent fields. Display `No metadata found` when no metadata is present.
 - Clearly report when the file cannot be read.
 
-The CLI reads the file without modifying it. It works locally without external lookups. The remaining CLI presentation and technical questions are tracked in [Open Questions](open-questions.md).
+The CLI reads the file without modifying it. It works locally without external lookups. Implemented decisions and future questions are tracked in [Open Questions](open-questions.md).
 
 ### Excluded
 
@@ -188,7 +188,7 @@ The CLI reads the file without modifying it. It works locally without external l
 - Support for other audio formats.
 - Playlist management.
 
-The broader capabilities remain future directions; they are not requirements for this first MVP.
+The excluded capabilities remain future directions; they are not requirements for the implemented inspection workflow.
 
 ### Implemented Extension — Directory Inspection
 
@@ -206,6 +206,14 @@ The first MVP is successful when a user can:
 6. Receive an explicit unsupported-version message for older tag versions, rather than `No metadata found`.
 
 Start validation with `music/tom-lehrer-when-you-are-old-and-gray.mp3`. The sample is local and ignored by Git; its download source and reuse terms are recorded in [Open Questions](open-questions.md). Expected output must be checked against the file's embedded values; source-page information alone does not establish what tags the file contains. Validation must also cover a file without tags and missing or unreadable inputs, and confirm that inspection leaves the input file unchanged.
+
+### Directory Extension Acceptance
+
+A directory scan processes only matching regular MP3 files in lexical traversal order, includes subfolders only with `--recursive`, and leaves inputs unchanged. It continues after per-file or directory-read errors, reports affected paths to stderr, and summarizes successes, failures, and scan errors. Any such error exits with status 1; a successful scan with no matching files exits 0. Discovered symlinks are skipped, and a directory symlink root is rejected. Output-write failures stop processing. These cases are covered by generated directory tests.
+
+### User Acceptance
+
+On 2026-11-10, the user accepted the inspection milestone, including directory scanning. Reviewing each song in the batch output remains cumbersome but is acceptable for this read-only stage. Future metadata writing must provide per-song review and explicit acceptance of proposed changes; that workflow remains to be designed.
 
 ## 9. Long-Term Vision
 

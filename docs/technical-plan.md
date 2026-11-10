@@ -1,6 +1,6 @@
 # l1ner — First MVP Technical Plan
 
-**Status:** First MVP implemented and validated locally.
+**Status:** Single-file and directory inspection implemented and validated locally.
 
 ## Agreed Decisions
 
@@ -16,7 +16,7 @@ The [product vision](vision.md) defines the scope and acceptance criteria. The [
 
 ## Library Rationale
 
-The selected library exposes frames through `AllFrames()` and provides types for text, custom text, pictures, and unknown frames. This fits the goal of exposing available metadata without relying on a fixed list of title/artist getters.
+The selected library provides typed frames for text, custom text, pictures, and unknown data. The implementation validates frame boundaries and wraps each frame in its own tag for `ParseReader`, then retrieves it with `GetFrames`. This fits the goal of exposing available metadata without relying on a fixed list of title/artist getters.
 
 `dhowden/tag` was considered for its broader format coverage. The selected library favors direct frame inspection for this MP3-focused MVP. No claim is made that it decodes every possible MP3 metadata field.
 
@@ -26,7 +26,7 @@ Sources consulted during selection:
 - [Selected library repository](https://github.com/bogem/id3v2), which redirects to `n10v/id3v2`; the Go module proxy confirms the original module path for release `v2.1.4`.
 - [Alternative: dhowden/tag](https://github.com/dhowden/tag).
 
-## Intended Read Path
+## Implemented Read Path
 
 1. Validate the invocation and open the input file read-only.
 2. Detect the tag version before parsing. Report unsupported versions explicitly; do not interpret a parser's empty result alone as proof that metadata is absent. Account for legacy ID3v1 tags when distinguishing unsupported metadata from no metadata.
@@ -35,7 +35,7 @@ Sources consulted during selection:
 5. Print the file path followed by `Tag: Value` lines. Use `No metadata found` only when metadata is absent. Report malformed tags or read failures clearly.
 6. Close the file without changing it.
 
-## Validation Before Acceptance
+## Validation Criteria
 
 - Compare terminal output with independently inspected embedded values in the reference MP3.
 - Check text, custom fields, repeated values, artwork descriptions, and unknown-frame summaries using suitable fixtures; do not assume one reference file covers all cases.
@@ -51,7 +51,7 @@ Checked on 2026-11-09:
 - Its [module declaration](https://proxy.golang.org/github.com/bogem/id3v2/v2/@v/v2.1.4.mod) declares `github.com/bogem/id3v2/v2`, Go 1.13, and `golang.org/x/text v0.3.8`. The declared Go version is not a recommendation to install that old toolchain.
 - The [official Go download metadata](https://go.dev/dl/?mode=json) lists Go 1.27.3 as stable. Use that as the initial development toolchain target; the selected library's upstream tests pass with this toolchain.
 
-The selected library's upstream `go test ./...` passed with network access disabled after dependency setup. Tests were run from a writable temporary copy because the upstream tests modify their own fixtures and cannot run directly in Go's read-only module cache. This verifies the dependency/toolchain combination, not the unimplemented l1ner CLI.
+The selected library's upstream `go test ./...` passed with network access disabled after dependency setup. Tests were run from a writable temporary copy because the upstream tests modify their own fixtures and cannot run directly in Go's read-only module cache. That check verified the dependency/toolchain combination. The project tests and CLI validation are recorded below.
 
 ## Minimal CLI Structure
 
@@ -68,7 +68,8 @@ Implemented files:
 | `inspect.go` | Read-only file access, tag detection, and tag-header validation. |
 | `frames.go` | Frame-header validation, iteration, and library decoding adapter. |
 | `output.go` | Stable ordering and readable text/binary frame presentation. |
-| `inspect_test.go` | Behavior checks for metadata coverage, output, failures, and file integrity. |
+| `inspect_test.go` | Generated MP3 fixtures for parsing, boundary checks, errors, and file integrity. |
+| `output_test.go` | Direct rendering tests for ordering, Unicode, escaping, summaries, and writer failures. |
 
 Follow the Google Go style conventions documented in [CONTRIBUTING.md](../CONTRIBUTING.md). File access, tag validation, frame validation, and decoding are separate operations; coordinating functions remain focused.
 
@@ -96,9 +97,11 @@ The CLI checks the MP3 extension and recognizes ID3 or MPEG headers; it does not
 Local validation passed:
 
 - `go test ./...`: independently constructed ID3v2.3/v2.4 fixtures covering repeated text frames, custom tags, artwork, comments, unknown frames, terminal escaping, absent tags, malformed sizes, unsupported versions/flags, invalid arguments, missing/unreadable files, and unchanged input bytes.
-- `go vet ./...` and a CLI build.
+- `go vet ./...` and a CLI build. CI runs these checks alongside formatting, module verification, and tests; remote run status must be checked on GitHub separately.
 - Reference-file inspection compared with an independent byte-level check of embedded frames. The whole-file SHA-256 remained `9f34ee07c75be1c4a35a72293339f92707500bcaeed2e2510ee139ff20bc1d34` before and after inspection.
 - Tests and reference inspection ran with `GOPROXY=off` after dependency setup; runtime inspection makes no network requests.
+
+The [sample-validation notes](sample-validation.md) record the 20-file local collection and its limits; the [manifest](mp3-samples.tsv) records provenance and checksums.
 
 The reference includes a nonstandard `YEAR` frame. It is reported as unparsed data, not decoded as a standard date field.
 
