@@ -8,3 +8,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing code. Its Go style and v
 - Keep personal audio in the ignored `music/` directory. Automated tests must use generated fixtures and work without that directory.
 - Use `TODO.md` for upcoming work and `docs/open-questions.md` for decisions. Do not add packages, frameworks, or features solely to anticipate future requirements.
 - Run the checks in `CONTRIBUTING.md` for code changes and report their results.
+- After verifying a milestone, push its branch and use `gh pr create` to open a pull request against `main`. Share the PR link and check results with the user for review and merge. Follow the [feature workflow](CONTRIBUTING.md#feature-workflow).
