@@ -2,6 +2,8 @@ package identify
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +12,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/palharez/l1ner/internal/ratelimit"
 )
 
 func stubFPCalc(t *testing.T, script string) {
@@ -144,6 +149,44 @@ func TestAcoustIDOutcomes(t *testing.T) {
 				t.Errorf("lookup error = %v, want %q without the key", err, tc.wantError)
 			}
 		})
+	}
+}
+
+func TestAcoustIDBatchWaitsForLookupSlot(t *testing.T) {
+	requests := make(chan string, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests <- r.PostFormValue("fingerprint")
+		io.WriteString(w, `{"status":"ok","results":[]}`)
+	}))
+	defer server.Close()
+	client := acoustIDClient{
+		endpoint: server.URL, rateFile: filepath.Join(t.TempDir(), "rate"), waitForRateLimit: true,
+	}
+	slot, err := ratelimit.Acquire(client.rateFile, "AcoustID", acoustIDInterval)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer slot.Close()
+	sample := fingerprint{text: "already-calculated", duration: 178}
+	ctx, cancel := context.WithTimeout(t.Context(), 25*time.Millisecond)
+	defer cancel()
+	if _, err := client.lookup(ctx, sample, "test-key"); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("canceled wait returned %v", err)
+	}
+	if len(requests) != 0 {
+		t.Fatal("sent a request while the slot was held")
+	}
+	if err := slot.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.lookup(t.Context(), sample, "test-key"); err != nil {
+		t.Fatal(err)
+	}
+	if len(requests) != 1 {
+		t.Fatalf("got %d requests, want 1", len(requests))
+	}
+	if got := <-requests; got != sample.text {
+		t.Errorf("fingerprint = %q, want %q", got, sample.text)
 	}
 }
 
