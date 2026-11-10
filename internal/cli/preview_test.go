@@ -180,7 +180,7 @@ func TestPreviewOutcomes(t *testing.T) {
 			})
 			var output bytes.Buffer
 			selected := false
-			err := previewFile(path, &output, client.search, func(_ context.Context, prompt string, _ []menuOption, _ int) (int, error) {
+			err := previewFile(t.Context(), path, &output, reviewSearches{recording: client.search}, func(_ context.Context, prompt string, _ []menuOption, _ int) (int, error) {
 				if !tc.wantSelection || selected || prompt != "Choose a recording" {
 					t.Fatalf("unexpected prompt %q", prompt)
 				}

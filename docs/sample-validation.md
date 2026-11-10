@@ -63,6 +63,12 @@ The built CLI reviewed four disposable tagless copies of “My Home Town” usin
 
 The approved copy acquired the expected title and artist in an ID3v2.4 tag. Its audio and backup matched the original byte for byte. The other copies and the reference MP3 stayed intact. The command exited `0` and restored the terminal mode.
 
+## Album and track tagging
+
+The built CLI used `preview --from-audio --release` on a disposable copy of “My Home Town.” The same recording appeared as track 9 on *Revisited* and track 19 on *In Concert*. Switching releases changed the proposed album and track position. Accepting the preview preserved the entire file.
+
+The built CLI then ran `fix --from-audio --release` on two disposable copies. Applying the first proposal and skipping the second produced one applied and one skipped. Inspection verified the approved album, album artist, track number, and disc number. The edited audio and unrelated metadata matched the original, the backup was byte-for-byte exact, and the skipped copy and reference were intact. Both commands restored terminal mode.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

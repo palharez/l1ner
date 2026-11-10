@@ -169,6 +169,21 @@ The batch paces lookups and continues after individual file or service failures.
 
 An empty folder or a completed or quit batch with zero failures exits `0`. A scan, file, or output failure exits `1`. Ctrl+C exits `130`. Use the same per-song recovery command to restore an applied song.
 
+### Add album and track tags
+
+```sh
+./bin/l1ner preview --release music/song.mp3
+./bin/l1ner fix --release music/song.mp3
+./bin/l1ner fix --release music/
+./bin/l1ner fix --from-audio --release music/
+```
+
+After you choose a recording, `--release` sends its MusicBrainz ID to browse the first page of up to 20 linked releases. The picker shows each matching disc and track position. The focused option also shows the release date, country, format, and album artist when available.
+
+Choose an edition to preview its album, album artist, track number, and disc number alongside the recording title and artist. Track and disc tags use the numeric positions on that edition. The album artist is proposed when MusicBrainz supplies a credit. A recording with no eligible release on that page is unresolved.
+
+In a folder, choose a recording and release for each song. **Apply changes to this MP3** writes the displayed proposal and saves the exact original as `.l1ner.bak`. **Skip song** advances to the next file. Audio matching through `--from-audio` uses the [AcoustID setup](docs/audio-identification.md#set-up-on-linux).
+
 ## Development
 
 The initial development target is Linux with Go 1.27.3. Verify your Go installation:

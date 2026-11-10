@@ -144,3 +144,9 @@ In audio mode the batch waits for the AcoustID reservation after calculating the
 An approved replacement and its backup are kept when the review ends. The batch tracks six outcomes in memory and counts unvisited songs as pending. A terminal or output failure stops further reviews. The [folder usage](../README.md#fix-a-folder) describes scope and exit codes.
 
 Packaging, distribution, recursive editing, and additional tag formats remain deferred.
+
+## Release tagging
+
+`--release` uses one MusicBrainz release browse request for the selected recording. Recording search and release browse share the MusicBrainz rate marker. Release browse waits up to 10 seconds for the local slot and fetches a bounded page of up to 20 releases. The decoder matches the recording ID to each track and uses its numeric position and the position of its medium.
+
+Preview and fix use the same picker and proposal. For release tags the writer adds or replaces `TALB`, `TPE2`, `TRCK`, and `TPOS` through the same frame rewrite and staged verification used for title and artist. Each proposed field is checked against the staged tag. Folder review uses that same per-file path. [Usage](../README.md#add-album-and-track-tags)

@@ -28,7 +28,7 @@ type fixTarget struct {
 	tags         songTags
 }
 
-func openFixTarget(path string, fromAudio bool) (_ *fixTarget, err error) {
+func openFixTarget(path string, fromAudio, withRelease bool) (_ *fixTarget, err error) {
 	if !strings.EqualFold(filepath.Ext(path), ".mp3") {
 		return nil, fmt.Errorf("expected an MP3 file: %s", path)
 	}
@@ -62,7 +62,7 @@ func openFixTarget(path string, fromAudio bool) (_ *fixTarget, err error) {
 		return nil, err
 	}
 	target := &fixTarget{path: path, name: name, dir: dir, file: file, info: info}
-	if err := target.readOriginal(fromAudio); err != nil {
+	if err := target.readOriginal(fromAudio, withRelease); err != nil {
 		return nil, err
 	}
 	return target, nil
@@ -93,7 +93,7 @@ func checkFileAttributes(file *os.File) error {
 	return nil
 }
 
-func (t *fixTarget) readOriginal(fromAudio bool) error {
+func (t *fixTarget) readOriginal(fromAudio, withRelease bool) error {
 	if _, err := t.dir.Lstat(t.name + backupSuffix); err == nil {
 		return fmt.Errorf("backup already exists: %s", t.path+backupSuffix)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -110,13 +110,9 @@ func (t *fixTarget) readOriginal(fromAudio bool) error {
 	if err != nil {
 		return err
 	}
-	if fromAudio {
-		t.tags = tagsForAudioReview(entries)
-	} else {
-		t.tags, err = lookupTagsFromEntries(entries)
-		if err != nil {
-			return err
-		}
+	t.tags, err = tagsForReview(entries, fromAudio, withRelease)
+	if err != nil {
+		return err
 	}
 	t.digest, err = hashFileSection(t.file, 0, t.info.Size())
 	if err != nil {
@@ -160,6 +156,11 @@ func (t *fixTarget) apply(ctx context.Context, proposal songProposal) (fixResult
 	if proposal.path != t.path || !proposal.changed() ||
 		!slices.Equal(proposal.title.current, t.tags.titles) || !slices.Equal(proposal.artist.current, t.tags.artists) {
 		return fixResult{}, errors.New("proposal does not match the reviewed MP3")
+	}
+	for _, field := range proposal.releaseFields {
+		if !slices.Equal(field.tag.current, t.tags.release[field.id]) {
+			return fixResult{}, errors.New("proposal does not match the reviewed MP3")
+		}
 	}
 	tag, err := rewriteTag(t.header, t.body, proposal)
 	if err != nil {
@@ -252,6 +253,11 @@ func verifyReplacement(file, backup *os.File, tag []byte, proposal songProposal,
 	}
 	if !slices.Equal(tags.titles, expectedTagValues(proposal.title)) || !slices.Equal(tags.artists, expectedTagValues(proposal.artist)) {
 		return errors.New("replacement tags differ from the approved proposal")
+	}
+	for _, field := range proposal.releaseFields {
+		if !slices.Equal(songTagValues(entries, field.id), expectedTagValues(field.tag)) {
+			return fmt.Errorf("replacement %s tag differs from the approved proposal", field.id)
+		}
 	}
 	before, err := hashFileSection(backup, originalOffset, tailSize)
 	if err != nil {

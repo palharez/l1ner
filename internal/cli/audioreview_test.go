@@ -46,7 +46,7 @@ func TestFixFromAudioTerminal(t *testing.T) {
 					}
 					return []identify.Candidate{{RecordingID: "id", Title: "Title", Artist: "Artist", Score: 0.99}}, nil
 				}
-				exit <- runSongReview("fix", []string{"--from-audio", path}, terminal, terminal, &errOut, nil, search, nil)
+				exit <- runSongReview("fix", []string{"--from-audio", path}, terminal, terminal, &errOut, reviewSearches{audio: search}, nil)
 			}()
 			ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 			defer cancel()
@@ -131,7 +131,7 @@ func TestFixFromAudioWithoutCompleteCandidate(t *testing.T) {
 		return 0, nil
 	}
 	var out bytes.Buffer
-	decision, err := fixSong(t.Context(), path, &out, nil, search, choose)
+	decision, err := fixSong(t.Context(), path, &out, reviewSearches{audio: search}, choose)
 	if err != nil || decision != reviewUnresolved || !strings.Contains(out.String(), "No AcoustID recording candidates with both title and artist found.") {
 		t.Errorf("decision = %v, error = %v, output = %q", decision, err, &out)
 	}
@@ -162,7 +162,7 @@ func TestPreviewFromAudioTerminal(t *testing.T) {
 				{RecordingID: "live", Title: "Song (Live)", Artist: "Artist", Score: 0.97},
 			}, nil
 		}
-		exit <- runSongReview("preview", []string{"--from-audio", path}, terminal, terminal, &errOut, nil, audio, nil)
+		exit <- runSongReview("preview", []string{"--from-audio", path}, terminal, terminal, &errOut, reviewSearches{audio: audio}, nil)
 	}()
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()

@@ -36,7 +36,8 @@ func runCommand(args []string, in io.Reader, out, errOut io.Writer, search recor
 		case "identify":
 			return runIdentify(args[1:], out, errOut, identify.Search)
 		case "preview", "fix":
-			return runSongReview(args[0], args[1:], in, out, errOut, search, identify.SearchFile, identify.SearchFileForBatch)
+			searches := reviewSearches{recording: search, audio: identify.SearchFile, releases: searchMusicBrainzReleases}
+			return runSongReview(args[0], args[1:], in, out, errOut, searches, identify.SearchFileForBatch)
 		}
 	}
 	if len(args) == 0 || args[0] != "inspect" {

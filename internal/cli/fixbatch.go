@@ -30,7 +30,7 @@ func (s *fixBatchSummary) record(decision reviewDecision) {
 	s.pending--
 }
 
-func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch, audio audioCandidateSearch, choose menuSelector) int {
+func runFixDirectory(path string, out, errOut io.Writer, searches reviewSearches, choose menuSelector) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	scan := scanDirectory(path, false)
@@ -45,10 +45,10 @@ func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch,
 			return 1
 		}
 	}
-	if audio == nil {
-		search = paceBatchSearch(search)
+	if searches.audio == nil {
+		searches.recording = paceRecordingSearch(searches.recording)
 	}
-	summary, err := fixBatch(ctx, scan.paths, out, errOut, search, audio, choose)
+	summary, err := fixBatch(ctx, scan.paths, out, errOut, searches, choose)
 	code := 0
 	switch {
 	case errors.Is(err, errPreviewCanceled) || errors.Is(err, context.Canceled):
@@ -72,12 +72,12 @@ func runFixDirectory(path string, out, errOut io.Writer, search recordingSearch,
 	return code
 }
 
-func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search recordingSearch, audio audioCandidateSearch, choose menuSelector) (fixBatchSummary, error) {
+func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, searches reviewSearches, choose menuSelector) (fixBatchSummary, error) {
 	summary := fixBatchSummary{pending: len(paths)}
 	if err := ctx.Err(); err != nil {
 		return summary, err
 	}
-	if audio != nil && len(paths) != 0 {
+	if searches.audio != nil && len(paths) != 0 {
 		if _, err := acoustIDApplicationKey(); err != nil {
 			return summary, err
 		}
@@ -89,7 +89,7 @@ func fixBatch(ctx context.Context, paths []string, out, errOut io.Writer, search
 		if _, err := fmt.Fprintf(out, "\nSong %d of %d\n", i+1, len(paths)); err != nil {
 			return summary, err
 		}
-		decision, err := fixSong(ctx, path, out, search, audio, choose)
+		decision, err := fixSong(ctx, path, out, searches, choose)
 		if err == nil {
 			if decision == reviewQuit {
 				_, err := fmt.Fprintln(out, "Review ended.")

@@ -14,7 +14,7 @@ import (
 const lookupSyntax = "l1ner lookup <file.mp3>"
 
 func runLookup(args []string, out, errOut io.Writer, search recordingSearch) int {
-	path, _, err := parseSongPath("lookup", args)
+	options, err := parseSongPath("lookup", args)
 	if errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(out, "Usage: "+lookupSyntax)
 		fmt.Fprintln(out, "Send the MP3's embedded title and artist to MusicBrainz and show recording candidates.")
@@ -25,29 +25,37 @@ func runLookup(args []string, out, errOut io.Writer, search recordingSearch) int
 		fmt.Fprintln(errOut, "Usage: "+lookupSyntax)
 		return 2
 	}
-	if err := lookupFile(path, out, search); err != nil {
+	if err := lookupFile(options.path, out, search); err != nil {
 		reportError(errOut, err)
 		return 1
 	}
 	return 0
 }
 
-func parseSongPath(command string, args []string) (path string, fromAudio bool, err error) {
+type songOptions struct {
+	path               string
+	fromAudio, release bool
+}
+
+func parseSongPath(command string, args []string) (songOptions, error) {
+	var options songOptions
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	if command == "preview" || command == "fix" {
-		flags.BoolVar(&fromAudio, "from-audio", false, "use AcoustID fingerprint matches")
+		flags.BoolVar(&options.fromAudio, "from-audio", false, "use AcoustID fingerprint matches")
+		flags.BoolVar(&options.release, "release", false, "choose a MusicBrainz release")
 	}
 	if err := flags.Parse(args); err != nil {
-		return "", false, err
+		return options, err
 	}
 	if flags.NArg() != 1 {
 		if command == "fix" {
-			return "", false, errors.New("expected one MP3 file or directory path")
+			return options, errors.New("expected one MP3 file or directory path")
 		}
-		return "", false, errors.New("expected one MP3 file path")
+		return options, errors.New("expected one MP3 file path")
 	}
-	return flags.Arg(0), fromAudio, nil
+	options.path = flags.Arg(0)
+	return options, nil
 }
 
 func lookupFile(path string, out io.Writer, search recordingSearch) error {
@@ -80,6 +88,7 @@ func displayLookup(out io.Writer, path, title, artist string, matches []recordin
 
 type songTags struct {
 	titles, artists []string
+	release         map[string][]string
 }
 
 func (tags songTags) searchTerms() (title, artist string) {

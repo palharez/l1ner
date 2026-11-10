@@ -24,7 +24,7 @@ const identifyHelp = "Usage: " + identifySyntax + "\n\n" +
 	"The fingerprint is calculated locally. AcoustID receives the fingerprint and duration."
 
 func runIdentify(args []string, out, errOut io.Writer, search func(context.Context, string, string) ([]identify.Candidate, error)) int {
-	path, _, err := parseSongPath("identify", args)
+	options, err := parseSongPath("identify", args)
 	if errors.Is(err, flag.ErrHelp) {
 		_, err := fmt.Fprintln(out, identifyHelp)
 		if err != nil {
@@ -46,12 +46,12 @@ func runIdentify(args []string, out, errOut io.Writer, search func(context.Conte
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	candidates, err := search(ctx, path, key)
+	candidates, err := search(ctx, options.path, key)
 	if errors.Is(ctx.Err(), context.Canceled) || errors.Is(err, context.Canceled) {
 		return 130
 	}
 	if err == nil {
-		err = displayIdentification(out, path, candidates)
+		err = displayIdentification(out, options.path, candidates)
 	}
 	if err != nil {
 		reportError(errOut, err)

@@ -194,6 +194,10 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 ## Identification and Accuracy
 
+- [x] How should the first release-tagging workflow choose an edition?
+
+  **Decision.** `--release` adds a release picker after recording selection in `preview` and `fix`. MusicBrainz receives the selected recording ID. Review the matching tracks from the first page of up to 20 releases, with disc and track position and available edition details. The selected release contributes album, album artist when credited, track number, and disc number. A folder uses the same selection and approval for each song. [Release tagging usage](../README.md#add-album-and-track-tags)
+
 - [ ] How should different recordings, remasters, and album editions be distinguished?
 - [ ] How should match confidence be calculated and communicated?
 - [ ] How should partially correct metadata be handled?
@@ -219,7 +223,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio`. Flags precede the path.
+  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

@@ -160,11 +160,11 @@ func TestFixDirectoryEmptyOrSymlink(t *testing.T) {
 		return nil, nil
 	}
 	var out, errOut bytes.Buffer
-	if code := runFixDirectory(dir, &out, &errOut, search, nil, nil); code != 0 || !strings.Contains(out.String(), "No MP3 files found.") || errOut.Len() != 0 {
+	if code := runFixDirectory(dir, &out, &errOut, reviewSearches{recording: search}, nil); code != 0 || !strings.Contains(out.String(), "No MP3 files found.") || errOut.Len() != 0 {
 		t.Errorf("empty directory exit = %d, stdout = %q, stderr = %q", code, &out, &errOut)
 	}
 	out.Reset()
-	if code := runFixDirectory(link, &out, &errOut, search, nil, nil); code != 1 || !strings.Contains(errOut.String(), "directory path is a symbolic link") {
+	if code := runFixDirectory(link, &out, &errOut, reviewSearches{recording: search}, nil); code != 1 || !strings.Contains(errOut.String(), "directory path is a symbolic link") {
 		t.Errorf("symlink directory exit = %d, stdout = %q, stderr = %q", code, &out, &errOut)
 	}
 }
@@ -199,7 +199,7 @@ func TestFixBatchCancellationKeepsEarlierApproval(t *testing.T) {
 		return 0, nil
 	}
 	var out, errOut bytes.Buffer
-	summary, err := fixBatch(ctx, paths, &out, &errOut, search, nil, choose)
+	summary, err := fixBatch(ctx, paths, &out, &errOut, reviewSearches{recording: search}, choose)
 	if !errors.Is(err, context.Canceled) || summary != (fixBatchSummary{applied: 1, pending: 2}) || errOut.Len() != 0 {
 		t.Errorf("summary = %+v, error = %v, stderr = %q", summary, err, &errOut)
 	}
@@ -244,7 +244,7 @@ func TestFixDirectoryFromAudioTerminal(t *testing.T) {
 	var errOut bytes.Buffer
 	exit := make(chan int, 1)
 	go func() {
-		exit <- runSongReview("fix", []string{"--from-audio", dir}, terminal, terminal, &errOut, nil, nil, search)
+		exit <- runSongReview("fix", []string{"--from-audio", dir}, terminal, terminal, &errOut, reviewSearches{}, search)
 	}()
 	for _, step := range []struct{ wait, keys string }{
 		{"? Choose a recording", "\r"},
@@ -300,7 +300,7 @@ func TestFixBatchFromAudioSetupErrors(t *testing.T) {
 			return nil, identify.ErrFPCalcMissing
 		}
 		var out, errOut bytes.Buffer
-		summary, err := fixBatch(t.Context(), paths, &out, &errOut, nil, search, nil)
+		summary, err := fixBatch(t.Context(), paths, &out, &errOut, reviewSearches{audio: search}, nil)
 		if summary != (fixBatchSummary{pending: 2}) || err == nil || errOut.Len() != 0 {
 			t.Errorf("summary = %+v, error = %v, stderr = %q", summary, err, &errOut)
 		}
