@@ -114,6 +114,9 @@ func TestArgumentsAndReadErrors(t *testing.T) {
 	if code := run([]string{"--help"}, &out, &errOut); code != 0 {
 		t.Fatal(code)
 	}
+	if !strings.Contains(out.String(), "Audio identification is optional.") {
+		t.Errorf("global help should mark identification as optional, got %q", &out)
+	}
 	for _, path := range []string{filepath.Join(t.TempDir(), "missing.mp3"), t.TempDir() + ".mp3"} {
 		if code := run([]string{"inspect", path}, &out, &errOut); code != 1 {
 			t.Fatal(code)

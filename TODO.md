@@ -70,6 +70,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 1. [x] Move the existing CLI and tests into `internal/cli` and keep the root entry point. Commit as `refactor(cli): move command workflows into internal`.
 2. [x] Add the local Chromaprint adapter and AcoustID client, with deterministic tests for ambiguous and missing results. Commit as `feat(identify): look up recordings from audio fingerprints`.
 3. [x] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. See the [setup](README.md#identify-a-song-from-audio) and [live check](docs/sample-validation.md#audio-identification). Follow the [PR workflow](CONTRIBUTING.md#feature-workflow).
+4. [x] Mark audio identification as optional in help and document how to register an AcoustID application and use its key. Verify the standard commands work without AcoustID setup. Commit as `docs(identify): explain optional AcoustID setup`.
 
 ## Future directions — not committed scope
 

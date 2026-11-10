@@ -15,11 +15,18 @@ import (
 )
 
 const identifySyntax = "l1ner identify <file.mp3>"
+const acoustIDRegistrationURL = "https://acoustid.org/new-application"
+
+const identifyHelp = "Usage: " + identifySyntax + "\n\n" +
+	"Optionally identify an MP3 by sound. The other commands work without AcoustID setup.\n" +
+	"Install Chromaprint's fpcalc utility on PATH. Set L1NER_ACOUSTID_KEY to the\n" +
+	"application API key from " + acoustIDRegistrationURL + ".\n" +
+	"The fingerprint is calculated locally. AcoustID receives the fingerprint and duration."
 
 func runIdentify(args []string, out, errOut io.Writer, search func(context.Context, string, string) ([]identify.Candidate, error)) int {
 	path, err := parseSongPath("identify", args)
 	if errors.Is(err, flag.ErrHelp) {
-		_, err := fmt.Fprintln(out, "Usage: "+identifySyntax+"\nCalculate a fingerprint locally with fpcalc and send it with the audio duration to AcoustID.\nSet L1NER_ACOUSTID_KEY to your AcoustID application key.")
+		_, err := fmt.Fprintln(out, identifyHelp)
 		if err != nil {
 			reportError(errOut, err)
 			return 1
@@ -33,7 +40,7 @@ func runIdentify(args []string, out, errOut io.Writer, search func(context.Conte
 	}
 	key := strings.TrimSpace(os.Getenv("L1NER_ACOUSTID_KEY"))
 	if key == "" {
-		reportError(errOut, errors.New("set L1NER_ACOUSTID_KEY to your AcoustID application key"))
+		reportError(errOut, errors.New("set L1NER_ACOUSTID_KEY to the application API key from "+acoustIDRegistrationURL))
 		return 1
 	}
 

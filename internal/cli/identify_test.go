@@ -19,9 +19,9 @@ func TestIdentifyArgumentsAndConfiguration(t *testing.T) {
 		code int
 		want string
 	}{
-		{"help", []string{"--help"}, 0, "L1NER_ACOUSTID_KEY"},
+		{"help", []string{"--help"}, 0, acoustIDRegistrationURL},
 		{"invalid arguments", []string{"one.mp3", "two.mp3"}, 2, "expected one MP3 file path"},
-		{"missing key", []string{"song.mp3"}, 1, "set L1NER_ACOUSTID_KEY"},
+		{"missing key", []string{"song.mp3"}, 1, "set L1NER_ACOUSTID_KEY to the application API key from " + acoustIDRegistrationURL},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out, errOut bytes.Buffer

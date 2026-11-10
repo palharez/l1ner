@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status.** Inspect MP3s offline, search by embedded tags or audio fingerprint, and review or apply title and artist changes one song at a time in the terminal.
+**Status.** Inspect MP3s offline, search by embedded tags, and review or apply title and artist changes one song at a time in the terminal. Audio identification is optional.
 
 ## First MVP
 
@@ -101,18 +101,13 @@ A completed search exits `0`, including when it returns zero candidates. Input, 
 
 ### Identify a song from audio
 
-Install Chromaprint's `fpcalc` utility on `PATH` and register an application with AcoustID to get its application key. The hosted API is free for non-commercial use. [Chromaprint downloads](https://acoustid.org/chromaprint) · [Register an AcoustID application](https://acoustid.org/new-application) · [AcoustID API](https://acoustid.org/webservice)
+`identify` is an opt-in way to find a recording by sound when its tags are missing or wrong. Only this command needs Chromaprint's `fpcalc` and an AcoustID application key. Use the [audio identification guide](docs/audio-identification.md) to install `fpcalc`, create the right key, and set `L1NER_ACOUSTID_KEY` in your shell.
 
 ```sh
-export L1NER_ACOUSTID_KEY='your-application-key'
 ./bin/l1ner identify music/song.mp3
 ```
 
-`identify` reads one MP3 and calculates its audio fingerprint locally. It sends the fingerprint and duration to AcoustID over HTTPS. The MP3, path, and tags stay local. Identification works with missing or incorrect tags and leaves the file byte for byte as it was.
-
-Review the returned MusicBrainz recording candidates by title, artist, ID, and AcoustID score. Different recording IDs remain separate, and repeated hits for the same ID use the highest score. The score ranks fingerprint hits. Verify the recording before relying on its metadata. See the [live validation](docs/sample-validation.md#audio-identification).
-
-A completed search exits `0`, including when it returns zero linked recordings. Input, configuration, service, and output errors exit `1`. Invalid arguments exit `2`. Ctrl+C exits `130`. The local calculation times out after 30 seconds and the request after 10. AcoustID lookups use a separate one-byte cache marker to coordinate at most one request per second across invocations using the same cache directory.
+AcoustID receives the fingerprint and duration. The MP3, path, and tags stay local. The command shows recording candidates for review and leaves the file untouched.
 
 ### Interactive song preview
 
@@ -196,6 +191,7 @@ The documented local validation collection contains 20 MP3 samples from one arti
 - [Product vision](docs/vision.md): concept, principles, MVP scope, and success criteria.
 - [Open questions](docs/open-questions.md): agreed decisions and questions for later phases.
 - [JSON output](docs/json-output.md): report format, examples, and error handling.
+- [Audio identification](docs/audio-identification.md) explains AcoustID, application key setup, and troubleshooting.
 - [Technical plan](docs/technical-plan.md): library selection, read-only workflow, and validation approach.
 - [Sample validation](docs/sample-validation.md): local observations, provenance, and coverage limits.
 

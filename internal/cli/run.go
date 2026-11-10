@@ -26,7 +26,7 @@ func Run(args []string, in io.Reader, out, errOut io.Writer) int {
 
 func runCommand(args []string, in io.Reader, out, errOut io.Writer, search recordingSearch) int {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
-		fmt.Fprintln(out, commandUsage)
+		fmt.Fprintln(out, commandUsage+"\n\nAudio identification is optional. Run 'l1ner identify --help' for setup.")
 		return 0
 	}
 	if len(args) > 0 {

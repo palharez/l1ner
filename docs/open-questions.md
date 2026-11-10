@@ -173,7 +173,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] Agree on the provider and what data may leave the machine.
 
-  **Decision.** Explicitly invoking `identify` sends a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. [AcoustID API](https://acoustid.org/webservice#lookup)
+  **Decision.** Audio identification is opt-in. Only an explicit `identify` invocation sends a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. All other commands work without AcoustID setup. [Setup guide](audio-identification.md)
 
 - [x] Agree on the first presentation of fingerprint matches.
 
