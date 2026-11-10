@@ -103,6 +103,35 @@ func TestFixHandlesConcurrentChanges(t *testing.T) {
 	}
 }
 
+func TestFixRenameFailureKeepsOriginalAndBackup(t *testing.T) {
+	path, original := saveFixFixture(t)
+	target, err := openFixTarget(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer target.close()
+	backup, stage, err := target.stageFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer target.dir.Remove(stage)
+	defer backup.Close()
+	if err := target.copyBackup(backup); err != nil {
+		t.Fatal(err)
+	}
+	if err := finishStage(backup, target.info); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := target.publish(t.Context(), stage, "missing-replacement"); err == nil || !strings.Contains(err.Error(), "replace MP3") {
+		t.Fatalf("publish error = %v, want a failed replacement", err)
+	}
+	for _, file := range []string{path, path + backupSuffix} {
+		if data, err := os.ReadFile(file); err != nil || !bytes.Equal(data, original) {
+			t.Errorf("%s differs from the original: %v", file, err)
+		}
+	}
+}
+
 func TestFixRejectsUnsafeFileLayouts(t *testing.T) {
 	for _, layout := range []string{"symlink", "hard link", "read-only", "locked"} {
 		t.Run(layout, func(t *testing.T) {
