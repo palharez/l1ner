@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/palharez/l1ner/internal/identify"
 )
 
 const usage = "Usage: l1ner inspect [--recursive] [--json] <file-or-directory>"
-const commandUsage = usage + "\n       " + lookupSyntax + "\n       " + previewSyntax + "\n       " + fixSyntax
+const commandUsage = usage + "\n       " + lookupSyntax + "\n       " + identifySyntax + "\n       " + previewSyntax + "\n       " + fixSyntax
 
 type inspectOptions struct {
 	path      string
@@ -31,6 +33,8 @@ func runCommand(args []string, in io.Reader, out, errOut io.Writer, search recor
 		switch args[0] {
 		case "lookup":
 			return runLookup(args[1:], out, errOut, search)
+		case "identify":
+			return runIdentify(args[1:], out, errOut, identify.Search)
 		case "preview", "fix":
 			return runSongReview(args[0], args[1:], in, out, errOut, search)
 		}
