@@ -33,6 +33,19 @@ type recording struct {
 	id, title, artist string
 }
 
+func searchMusicBrainz(title, artist string) ([]recording, error) {
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return nil, fmt.Errorf("find MusicBrainz rate limit directory: %w", err)
+	}
+	client := musicBrainzClient{
+		endpoint: musicBrainzEndpoint,
+		rateFile: filepath.Join(cache, "l1ner", "musicbrainz-rate"),
+		timeout:  musicBrainzTimeout,
+	}
+	return client.search(title, artist)
+}
+
 func (c musicBrainzClient) search(title, artist string) ([]recording, error) {
 	request, err := newRecordingSearchRequest(c.endpoint, title, artist)
 	if err != nil {
