@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** Inspect MP3s offline, search MusicBrainz for recording candidates, or review proposed title and artist changes for one song in the terminal.
+**Status:** Inspect MP3s offline, search MusicBrainz, and review or apply title and artist changes for one song in the terminal.
 
 ## First MVP
 
@@ -110,6 +110,25 @@ Run `preview` in a Linux terminal. It makes the same MusicBrainz search as `look
 The proposal shows the current and proposed title and artist side by side. When the values differ, choose **Accept proposal**, **Skip song**, **Choose another recording**, or **Quit**. Skip is highlighted by default. Accept prints a decision for the current run, and the file is opened read-only. Ctrl+C cancels the review.
 
 A completed review or a search with no candidates exits `0`. Missing or conflicting tags, a service error, or redirected terminal input or output exits `1`. Invalid arguments exit `2`, and Ctrl+C exits `130`.
+
+### Fix one song
+
+```sh
+./bin/l1ner fix music/song.mp3
+```
+
+`fix` opens the same MusicBrainz review and uses the MP3's current title and artist for the search. Choose **Apply changes to this MP3** to write the displayed title and artist. **Skip song** is highlighted by default. The command verifies the edited tags, audio and trailing bytes, then saves a byte-for-byte backup as `music/song.mp3.l1ner.bak` before replacing the MP3. The source directory must support hard links, rename, and directory sync.
+
+Fixing requires a regular, writable MP3 you own, with one hard link, an existing title and artist, and a supported ID3v2.3.0 or ID3v2.4.0 tag. It refuses symlinks, extended file attributes, protected frames, and an existing backup. Close other editors for the file while applying a fix. See the [write constraints](docs/technical-plan.md#single-song-fix).
+
+To restore the original bytes, confirm the overwrite when prompted and then inspect the restored file. This moves the backup into place.
+
+```sh
+mv -i -- music/song.mp3.l1ner.bak music/song.mp3
+./bin/l1ner inspect music/song.mp3
+```
+
+Apply, Skip, Quit, and a review with no changes or candidates exit `0`. Input, service, verification, and write failures exit `1`. Invalid arguments exit `2`, and cancellation before replacement exits `130`. If a failure occurs after the backup is published, the backup path is included in the diagnostic.
 
 ## Development
 

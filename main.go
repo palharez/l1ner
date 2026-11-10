@@ -9,7 +9,7 @@ import (
 )
 
 const usage = "Usage: l1ner inspect [--recursive] [--json] <file-or-directory>"
-const commandUsage = usage + "\n       " + lookupSyntax + "\n       " + previewSyntax
+const commandUsage = usage + "\n       " + lookupSyntax + "\n       " + previewSyntax + "\n       " + fixSyntax
 
 type inspectOptions struct {
 	path      string
@@ -32,8 +32,8 @@ func runCommand(args []string, in io.Reader, out, errOut io.Writer, search func(
 		switch args[0] {
 		case "lookup":
 			return runLookup(args[1:], out, errOut, search)
-		case "preview":
-			return runPreview(args[1:], in, out, errOut, search)
+		case "preview", "fix":
+			return runSongReview(args[0], args[1:], in, out, errOut, search)
 		}
 	}
 	if len(args) == 0 || args[0] != "inspect" {

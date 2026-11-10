@@ -37,6 +37,10 @@ The results show why recordings with similar credits still need human review. Br
 
 The built CLI ran in a Linux pseudo-terminal with a generated ID3v2.3 fixture tagged `my home town` and `Tom Lehrer`. MusicBrainz returned recording candidates with durations and version descriptions. After selecting a recording, the preview showed the title changing to `My Home Town` and the artist matching the current tag. Down and Enter accepted the proposal for that run. The command exited `0`, the terminal mode was restored, and the fixture's SHA-256 matched before and after.
 
+## Single-song fix
+
+The built CLI ran in a Linux pseudo-terminal on a disposable copy of “My Home Town” with a lowercase title tag. The wizard showed the MusicBrainz title as the only change, then applied it after explicit approval. Inspection showed `My Home Town`. An independent byte comparison confirmed that all other frames and the audio and trailing bytes were preserved. The backup matched the pre-edit copy byte for byte, and moving it back restored those exact bytes. The reference MP3 in `music/` was unchanged.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

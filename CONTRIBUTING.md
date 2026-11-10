@@ -1,6 +1,6 @@
 # Contributing to l1ner
 
-The CLI inspects local MP3 metadata on Linux and offers MusicBrainz lookup and interactive preview for one file. Start with the [README](README.md), [product vision](docs/vision.md), and [technical plan](docs/technical-plan.md). Upcoming work is tracked in [TODO.md](TODO.md).
+The CLI inspects local MP3 metadata on Linux and offers MusicBrainz lookup, interactive preview, and approved edits for one file. Start with the [README](README.md), [product vision](docs/vision.md), and [technical plan](docs/technical-plan.md). Upcoming work is tracked in [TODO.md](TODO.md).
 
 ## Development setup
 
@@ -46,6 +46,8 @@ Tests are organized by behavior: `inspect_test.go` uses generated MP3 tag fixtur
 `lookup_test.go` uses generated tags to check extraction, CLI behavior, and file integrity. `musicbrainz_test.go` uses a local HTTP server to check request encoding, the rate limit, and provider responses. The [live sample checks](docs/sample-validation.md#musicbrainz-lookup) are manual.
 
 `preview_test.go` uses generated tags and a local HTTP server. Linux pseudo-terminal tests exercise the keyboard workflow and verify terminal restoration and file integrity.
+
+`rewrite_test.go` and `fixfile_test.go` exercise frame preservation, verified replacement, backup collisions, concurrent changes, and recovery. `fix_test.go` drives the approval prompt in a Linux pseudo-terminal using generated MP3s and a local HTTP server.
 
 To focus on output behavior while developing:
 

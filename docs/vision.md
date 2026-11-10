@@ -200,7 +200,11 @@ An optional `--json` flag emits one machine-readable report for file or director
 
 ### Implemented Extension — MusicBrainz Lookup
 
-Users can explicitly search MusicBrainz for one MP3 using its embedded title and artist. l1ner shows recording candidates for human review. Exact release selection, fingerprinting, and metadata writing are future work. See the [lookup usage](../README.md#musicbrainz-lookup).
+Users can explicitly search MusicBrainz for one MP3 using its embedded title and artist. l1ner shows recording candidates for human review. Exact release selection and fingerprinting are future work. See the [lookup usage](../README.md#musicbrainz-lookup).
+
+### Implemented Extension — Single-Song Review and Fix
+
+The terminal wizard lets the listener choose a recording and review the proposed title and artist. `fix` applies those fields after explicit approval, preserves the audio and unrelated tags, and saves an exact backup of the source file. Directory edits are a separate milestone. See the [fix and recovery workflow](../README.md#fix-one-song).
 
 ## 8. Success Criteria
 
@@ -221,7 +225,7 @@ A directory scan processes only matching regular MP3 files in lexical traversal 
 
 ### User Acceptance
 
-On 2026-11-10, the user accepted the inspection milestone, including directory scanning. Reviewing each song in the batch output remains cumbersome but is acceptable for this read-only stage. Future metadata writing must provide per-song review and explicit acceptance of proposed changes; that workflow remains to be designed.
+On 2026-11-10, the user accepted the inspection milestone, including directory scanning. Reviewing each song in the batch output remains cumbersome but was acceptable for the inspection stage. The single-song fix requires per-song review and explicit acceptance. Future directory editing must carry that decision forward for every song.
 
 ## 9. Long-Term Vision
 
