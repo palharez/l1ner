@@ -39,6 +39,9 @@ func parseSongPath(command string, args []string) (string, error) {
 		return "", err
 	}
 	if flags.NArg() != 1 {
+		if command == "fix" {
+			return "", errors.New("expected one MP3 file or directory path")
+		}
 		return "", errors.New("expected one MP3 file path")
 	}
 	return flags.Arg(0), nil

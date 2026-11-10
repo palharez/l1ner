@@ -100,6 +100,7 @@ func inspectFile(path string, out io.Writer) error {
 	return display(out, path, entries)
 }
 
-func reportError(out io.Writer, err error) {
-	fmt.Fprintf(out, "Error: %s\n", safe(err.Error()))
+func reportError(out io.Writer, err error) error {
+	_, writeErr := fmt.Fprintf(out, "Error: %s\n", safe(err.Error()))
+	return writeErr
 }

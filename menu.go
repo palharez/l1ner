@@ -20,7 +20,10 @@ type menuOption struct {
 	details []string
 }
 
-func selectTerminalMenu(in, out *os.File, question string, options []menuOption, selected int) (choice int, err error) {
+func selectTerminalMenu(ctx context.Context, in, out *os.File, question string, options []menuOption, selected int) (choice int, err error) {
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
 	width, height, _ := term.GetSize(int(out.Fd()))
 	if width == 0 || height == 0 {
 		width, height = 80, 24
@@ -28,7 +31,7 @@ func selectTerminalMenu(in, out *os.File, question string, options []menuOption,
 	if width < 20 || height < 4 {
 		return 0, errors.New("terminal is too small to display the menu")
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, unix.SIGTERM)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, unix.SIGTERM)
 	defer stop()
 	fd := int(in.Fd())
 	state, err := term.MakeRaw(fd)

@@ -17,7 +17,12 @@ import (
 
 const previewSyntax = "l1ner preview <file.mp3>"
 
-type menuSelector func(question string, options []menuOption, selected int) (int, error)
+type menuSelector func(ctx context.Context, question string, options []menuOption, selected int) (int, error)
+
+// Losing the terminal ends a batch because the next proposal cannot be reviewed.
+type reviewUIError struct{ error }
+
+func (err reviewUIError) Unwrap() error { return err.error }
 
 type reviewDecision int
 
@@ -42,7 +47,7 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 	reviewFile := previewFile
 	if command == "fix" {
 		syntax = fixSyntax
-		help = "Review a MusicBrainz proposal and apply approved title and artist changes with a backup."
+		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory."
 		canceled = "Fix canceled."
 		reviewFile = fixFile
 	}
@@ -63,8 +68,17 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		reportError(errOut, fmt.Errorf("%s requires a terminal for input and output", command))
 		return 1
 	}
-	choose := func(question string, options []menuOption, selected int) (int, error) {
-		return selectTerminalMenu(input, output, question, options, selected)
+	choose := func(ctx context.Context, question string, options []menuOption, selected int) (int, error) {
+		choice, err := selectTerminalMenu(ctx, input, output, question, options, selected)
+		if err != nil && !errors.Is(err, errPreviewCanceled) {
+			return 0, reviewUIError{err}
+		}
+		return choice, err
+	}
+	if command == "fix" {
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			return runFixDirectory(path, out, errOut, search, choose)
+		}
 	}
 	if err := reviewFile(path, out, search, choose); err != nil {
 		if errors.Is(err, errPreviewCanceled) {
@@ -107,16 +121,21 @@ func searchAndReview(ctx context.Context, out io.Writer, path string, tags songT
 	if err != nil {
 		return songReview{}, err
 	}
-	if len(matches) == 0 {
-		_, err := fmt.Fprintf(out, "File: %s\nNo MusicBrainz recording candidates found.\n", safe(path))
-		return songReview{decision: reviewUnresolved}, err
+	if err := ctx.Err(); err != nil {
+		return songReview{}, err
 	}
-	return reviewSong(out, path, tags, matches, choose, applyLabel)
+	if len(matches) == 0 {
+		if _, err := fmt.Fprintf(out, "File: %s\nNo MusicBrainz recording candidates found.\n", safe(path)); err != nil {
+			return songReview{}, reviewUIError{err}
+		}
+		return songReview{decision: reviewUnresolved}, nil
+	}
+	return reviewSong(ctx, out, path, tags, matches, choose, applyLabel)
 }
 
-func reviewSong(out io.Writer, path string, tags songTags, matches []recording, choose menuSelector, applyLabel string) (songReview, error) {
+func reviewSong(ctx context.Context, out io.Writer, path string, tags songTags, matches []recording, choose menuSelector, applyLabel string) (songReview, error) {
 	if _, err := fmt.Fprintf(out, "File: %s\n", safe(path)); err != nil {
-		return songReview{}, err
+		return songReview{}, reviewUIError{err}
 	}
 	options := recordingOptions(matches)
 	options = append(options, menuOption{label: "Skip song"}, menuOption{label: "Quit"})
@@ -129,7 +148,7 @@ func reviewSong(out io.Writer, path string, tags songTags, matches []recording, 
 	selected := 0
 	for {
 		var err error
-		selected, err = choose("Choose a recording", options, selected)
+		selected, err = choose(ctx, "Choose a recording", options, selected)
 		if err != nil {
 			return songReview{}, err
 		}
@@ -141,12 +160,12 @@ func reviewSong(out io.Writer, path string, tags songTags, matches []recording, 
 		}
 		proposal := proposeSong(path, tags, matches[selected])
 		if err := displayProposal(out, proposal); err != nil {
-			return songReview{}, err
+			return songReview{}, reviewUIError{err}
 		}
 		if !proposal.changed() {
 			return songReview{decision: reviewUnchanged, proposal: proposal}, nil
 		}
-		action, err := choose("Review this proposal", actions, int(reviewSkip))
+		action, err := choose(ctx, "Review this proposal", actions, int(reviewSkip))
 		if err != nil {
 			return songReview{}, err
 		}

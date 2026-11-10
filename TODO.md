@@ -60,7 +60,7 @@ Batch lookup, fingerprinting, and release selection are future milestones.
 **Branch** `milestone/batch-fix`. `l1ner fix <directory>` reviews the immediate MP3s in lexical order. Each Apply approves only the displayed song. Quit leaves the current and remaining songs pending.
 
 1. [x] Pace the MusicBrainz requests with a cancellable wait and keep the existing shared rate limit. Commit as `feat(fix): pace MusicBrainz searches during batch review`.
-2. [ ] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
+2. [x] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
 3. [ ] Verify the batch with generated MP3s, a local server, and terminal input. Document usage and open a PR for review. Commit as `docs(fix): document batch review and outcomes`.
 
 ## Future directions — not committed scope
