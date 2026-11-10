@@ -214,6 +214,10 @@ The terminal wizard lets the listener choose a recording and review the proposed
 
 Listeners can look up one MP3 by sound, including files with missing or incorrect tags. l1ner generates a fingerprint locally and sends it with the duration to AcoustID. Listeners can also use an audio match to preview the title and artist or explicitly approve adding or replacing those tags. See the [audio-assisted workflow](../README.md#preview-or-fix-one-song-from-audio).
 
+### Implemented Extension — Album and Track Tags
+
+Listeners can choose a release for an identified recording, then review album, album artist, track number, and disc number. The same per-song review works for a single MP3 or a folder. [Release tagging](../README.md#add-album-and-track-tags)
+
 ## 8. Success Criteria
 
 The first MVP is successful when a user can:

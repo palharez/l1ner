@@ -94,7 +94,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 
 1. [x] Browse MusicBrainz releases for the selected recording and verify edition-specific track positions. Commit as `feat(musicbrainz): browse release tracks for a recording`.
 2. [x] Reuse the release picker and verified writer for preview, single-file fix, and batch fix. Check per-song approval, exact backups, and unchanged unrelated data. Commit as `feat(fix): review and apply release tags`.
-3. [ ] Verify the CLI and document the workflow. Commit as `docs(fix): document album and track tagging`.
+3. [x] Verify the CLI and document the workflow. Commit as `docs(fix): document album and track tagging`.
 
 ## Future directions — not committed scope
 
