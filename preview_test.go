@@ -108,6 +108,14 @@ func TestPreviewTerminal(t *testing.T) {
 			var transcript strings.Builder
 			for i, want := range tc.wait {
 				transcript.WriteString(readPreviewOutput(t, ctx, master, want))
+				if tc.name == "change recording and accept" && i == 0 {
+					transcript.WriteString(readPreviewOutput(t, ctx, master, "  Quit"))
+					initial := transcript.String()
+					if strings.Count(initial, "2. Song (Live) — Artist") != 1 ||
+						!strings.Contains(initial, "Recording ID: studio-id") || strings.Contains(initial, "live-id") {
+						t.Errorf("initial picker repeated a candidate or showed details for the wrong option: %q", initial)
+					}
+				}
 				if _, err := io.WriteString(master, tc.keys[i]); err != nil {
 					t.Fatal(err)
 				}
@@ -117,7 +125,7 @@ func TestPreviewTerminal(t *testing.T) {
 			}
 			if tc.name == "change recording and accept" {
 				transcript.WriteString(readPreviewOutput(t, ctx, master, "(recording studio-id)."))
-				for _, want := range []string{"live · 2:27", "MusicBrainz recording: live-id", "Current", "Proposed", "changed"} {
+				for _, want := range []string{"Version: live", "2:27", "Recording ID: live-id", "\x1b[J✓ 2. Song (Live)", "MusicBrainz recording: live-id", "Current", "Proposed", "changed"} {
 					if !strings.Contains(transcript.String(), want) {
 						t.Errorf("missing %q in terminal output", want)
 					}
@@ -172,7 +180,7 @@ func TestPreviewOutcomes(t *testing.T) {
 			})
 			var output bytes.Buffer
 			selected := false
-			err := previewFile(path, &output, client.search, func(prompt string, _ []string, _ int) (int, error) {
+			err := previewFile(path, &output, client.search, func(prompt string, _ []menuOption, _ int) (int, error) {
 				if !tc.wantSelection || selected || prompt != "Choose a recording" {
 					t.Fatalf("unexpected prompt %q", prompt)
 				}

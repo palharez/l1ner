@@ -105,7 +105,7 @@ A completed search exits `0`, including when it returns zero candidates. Input, 
 ./bin/l1ner preview music/song.mp3
 ```
 
-Run `preview` in a Linux terminal. It makes the same MusicBrainz search as `lookup` using the file's title and artist. Move with the arrow keys and press Enter to choose a recording. Candidate details include the recording ID and any version description or duration supplied by MusicBrainz.
+Run `preview` in a Linux terminal. It makes the same MusicBrainz search as `lookup` using the file's title and artist. Move through the candidate list with the arrow keys. The focused row expands to show its recording ID and any version description. Durations appear beside the titles when available. Press Enter to select a recording and collapse the list to one confirmation line.
 
 The proposal shows the current and proposed title and artist side by side. When the values differ, choose **Accept proposal**, **Skip song**, **Choose another recording**, or **Quit**. Skip is highlighted by default. Accept prints a decision for the current run, and the file is opened read-only. Ctrl+C cancels the review.
 
