@@ -23,7 +23,7 @@ func TestBatchSearchPacesRequestsAndCancelsWait(t *testing.T) {
 		arrivals <- time.Now()
 		io.WriteString(w, `{"recordings":[]}`)
 	})
-	search := paceBatchSearch(client.search)
+	search := paceRecordingSearch(client.search)
 	for _, title := range []string{"First", "Second"} {
 		if _, err := search(t.Context(), title, "Artist"); err != nil {
 			t.Fatal(err)
@@ -52,7 +52,7 @@ func TestBatchSearchWaitsForLocalReservation(t *testing.T) {
 	if _, err := client.search(t.Context(), "Earlier", "Artist"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := paceBatchSearch(client.search)(t.Context(), "First batch song", "Artist"); err != nil {
+	if _, err := paceRecordingSearch(client.search)(t.Context(), "First batch song", "Artist"); err != nil {
 		t.Fatal(err)
 	}
 	if got := requests.Load(); got != 2 {

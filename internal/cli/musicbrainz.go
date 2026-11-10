@@ -145,9 +145,9 @@ func fetchMusicBrainz(request *http.Request, timeout time.Duration) ([]byte, err
 	return data, nil
 }
 
-// paceBatchSearch is used sequentially by one batch. Leave a full interval
+// paceRecordingSearch is used sequentially by one review. Leave a full interval
 // after a request ends, since network latency can vary between songs.
-func paceBatchSearch(search recordingSearch) recordingSearch {
+func paceRecordingSearch(search recordingSearch) recordingSearch {
 	var next time.Time
 	return func(ctx context.Context, title, artist string) ([]recording, error) {
 		deadline := time.Now().Add(musicBrainzTimeout)

@@ -9,12 +9,7 @@ import (
 	"syscall"
 )
 
-const fixSyntax = "l1ner fix [--from-audio] <file-or-directory>"
-
-func fixFile(path string, out io.Writer, search recordingSearch, choose menuSelector) error {
-	decision, err := fixSong(context.Background(), path, out, search, nil, choose)
-	return finishSingleFix(out, decision, err)
-}
+const fixSyntax = "l1ner fix [--from-audio] [--release] <file-or-directory>"
 
 func finishSingleFix(out io.Writer, decision reviewDecision, err error) error {
 	if err == nil && decision == reviewQuit {
@@ -23,18 +18,18 @@ func finishSingleFix(out io.Writer, decision reviewDecision, err error) error {
 	return err
 }
 
-func fixSong(ctx context.Context, path string, out io.Writer, search recordingSearch, audio audioCandidateSearch, choose menuSelector) (reviewDecision, error) {
-	target, err := openFixTarget(path, audio != nil)
+func fixSong(ctx context.Context, path string, out io.Writer, searches reviewSearches, choose menuSelector) (reviewDecision, error) {
+	target, err := openFixTarget(path, searches.audio != nil, searches.releases != nil)
 	if err != nil {
 		return reviewUnresolved, err
 	}
 	defer target.close()
 	const applyLabel = "Apply changes to this MP3"
 	var review songReview
-	if audio == nil {
-		review, err = searchAndReview(ctx, out, path, target.tags, search, choose, applyLabel)
+	if searches.audio == nil {
+		review, err = searchAndReview(ctx, out, path, target.tags, searches, choose, applyLabel)
 	} else {
-		review, err = searchAndReviewAudio(ctx, out, path, target.file, target.tags, audio, choose, applyLabel)
+		review, err = searchAndReviewAudio(ctx, out, path, target.file, target.tags, searches, choose, applyLabel)
 	}
 	if err != nil {
 		return reviewUnresolved, err

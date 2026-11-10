@@ -58,7 +58,8 @@ func rewriteTag(header, body []byte, proposal songProposal) ([]byte, error) {
 		}
 		tag = append(tag, updated...)
 	}
-	for _, id := range []string{"TIT2", "TPE1"} {
+	for _, field := range proposal.fields() {
+		id := field.id
 		replacement, ok := replacements[id]
 		if !ok || found[id] {
 			continue
@@ -88,10 +89,7 @@ type approvedFrame struct {
 
 func approvedTextFrames(version byte, proposal songProposal) (map[string]approvedFrame, error) {
 	replacements := make(map[string]approvedFrame)
-	for _, field := range []struct {
-		id  string
-		tag tagComparison
-	}{{"TIT2", proposal.title}, {"TPE1", proposal.artist}} {
+	for _, field := range proposal.fields() {
 		if !field.tag.changed() {
 			continue
 		}

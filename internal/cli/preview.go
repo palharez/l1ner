@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"slices"
 	"strconv"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 
 	"golang.org/x/term"
 )
 
-const previewSyntax = "l1ner preview [--from-audio] <file.mp3>"
+const previewSyntax = "l1ner preview [--from-audio] [--release] <file.mp3>"
 
 type menuSelector func(ctx context.Context, question string, options []menuOption, selected int) (int, error)
 
@@ -33,6 +35,7 @@ const (
 	reviewQuit
 	reviewUnchanged
 	reviewUnresolved
+	reviewChooseRelease
 )
 
 type songReview struct {
@@ -40,21 +43,26 @@ type songReview struct {
 	proposal songProposal
 }
 
-func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search recordingSearch, audio, batchAudio audioCandidateSearch) int {
+type reviewSearches struct {
+	recording recordingSearch
+	audio     audioCandidateSearch
+	releases  releaseSearch
+}
+
+func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, searches reviewSearches, batchAudio audioCandidateSearch) int {
 	syntax := previewSyntax
 	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change.\nUse --from-audio to search AcoustID. See 'l1ner identify --help' for setup."
 	canceled := "Preview canceled."
-	reviewFile := previewFile
 	if command == "fix" {
 		syntax = fixSyntax
 		help = "Review and apply approved title and artist changes for one MP3 or the MP3s directly inside a directory.\nUse --from-audio to look up recordings with AcoustID. See 'l1ner identify --help' for setup."
 		canceled = "Fix canceled."
-		reviewFile = fixFile
 	}
-	path, fromAudio, err := parseSongPath(command, args)
+	options, err := parseSongPath(command, args)
 	if errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(out, "Usage: "+syntax)
 		fmt.Fprintln(out, help)
+		fmt.Fprintln(out, "Use --release to choose an album edition and review its album and track tags.")
 		return 0
 	}
 	if err != nil {
@@ -62,12 +70,13 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		fmt.Fprintln(errOut, "Usage: "+syntax)
 		return 2
 	}
+	path := options.path
 	isDirectory := false
-	if command == "fix" || fromAudio {
+	if command == "fix" || options.fromAudio {
 		info, err := os.Stat(path)
 		isDirectory = err == nil && info.IsDir()
 	}
-	if command == "preview" && fromAudio && isDirectory {
+	if command == "preview" && options.fromAudio && isDirectory {
 		reportError(errOut, errors.New("--from-audio requires one MP3 file"))
 		return 2
 	}
@@ -84,17 +93,19 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		}
 		return choice, err
 	}
+	if !options.release {
+		searches.releases = nil
+	}
+	if !options.fromAudio {
+		searches.audio = nil
+	}
 	if isDirectory {
-		if !fromAudio {
-			batchAudio = nil
+		if options.fromAudio {
+			searches.audio = batchAudio
 		}
-		return runFixDirectory(path, out, errOut, search, batchAudio, choose)
+		return runFixDirectory(path, out, errOut, searches, choose)
 	}
-	if fromAudio {
-		err = reviewFileFromAudio(command, path, out, audio, choose)
-	} else {
-		err = reviewFile(path, out, search, choose)
-	}
+	err = reviewSingleSong(command, path, out, searches, choose)
 	if err != nil {
 		if errors.Is(err, errPreviewCanceled) {
 			if err == errPreviewCanceled {
@@ -110,12 +121,42 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 	return 0
 }
 
-func previewFile(path string, out io.Writer, search recordingSearch, choose menuSelector) error {
-	tags, err := readLookupTags(path)
+func reviewSingleSong(command, path string, out io.Writer, searches reviewSearches, choose menuSelector) error {
+	ctx := context.Background()
+	if searches.audio != nil || searches.releases != nil {
+		var stop context.CancelFunc
+		ctx, stop = signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+		defer stop()
+	}
+	if searches.audio == nil && searches.releases != nil {
+		searches.recording = paceRecordingSearch(searches.recording)
+	}
+	var err error
+	if command == "fix" {
+		decision, fixErr := fixSong(ctx, path, out, searches, choose)
+		err = finishSingleFix(out, decision, fixErr)
+	} else {
+		err = previewFile(ctx, path, out, searches, choose)
+	}
+	if errors.Is(err, context.Canceled) {
+		return errPreviewCanceled
+	}
+	return err
+}
+
+func previewFile(ctx context.Context, path string, out io.Writer, searches reviewSearches, choose menuSelector) error {
+	if searches.audio != nil {
+		return previewFromAudio(ctx, path, out, searches, choose)
+	}
+	entries, err := inspect(path)
 	if err != nil {
 		return err
 	}
-	review, err := searchAndReview(context.Background(), out, path, tags, search, choose, "Accept proposal (preview only)")
+	tags, err := tagsForReview(entries, false, searches.releases != nil)
+	if err != nil {
+		return err
+	}
+	review, err := searchAndReview(ctx, out, path, tags, searches, choose, "Accept proposal (preview only)")
 	return finishPreview(out, review, err)
 }
 
@@ -134,9 +175,9 @@ func finishPreview(out io.Writer, review songReview, err error) error {
 	return err
 }
 
-func searchAndReview(ctx context.Context, out io.Writer, path string, tags songTags, search recordingSearch, choose menuSelector, applyLabel string) (songReview, error) {
+func searchAndReview(ctx context.Context, out io.Writer, path string, tags songTags, searches reviewSearches, choose menuSelector, applyLabel string) (songReview, error) {
 	title, artist := tags.searchTerms()
-	matches, err := search(ctx, title, artist)
+	matches, err := searches.recording(ctx, title, artist)
 	if err != nil {
 		return songReview{}, err
 	}
@@ -149,21 +190,15 @@ func searchAndReview(ctx context.Context, out io.Writer, path string, tags songT
 		}
 		return songReview{decision: reviewUnresolved}, nil
 	}
-	return reviewSong(ctx, out, path, tags, matches, choose, applyLabel)
+	return reviewSong(ctx, out, path, tags, matches, searches.releases, choose, applyLabel)
 }
 
-func reviewSong(ctx context.Context, out io.Writer, path string, tags songTags, matches []recording, choose menuSelector, applyLabel string) (songReview, error) {
+func reviewSong(ctx context.Context, out io.Writer, path string, tags songTags, matches []recording, releases releaseSearch, choose menuSelector, applyLabel string) (songReview, error) {
 	if _, err := fmt.Fprintf(out, "File: %s\n", safe(path)); err != nil {
 		return songReview{}, reviewUIError{err}
 	}
 	options := recordingOptions(matches)
 	options = append(options, menuOption{label: "Skip song"}, menuOption{label: "Quit"})
-	actions := []menuOption{
-		reviewSkip:        {label: "Skip song"},
-		reviewAccept:      {label: applyLabel},
-		reviewChooseAgain: {label: "Choose another recording"},
-		reviewQuit:        {label: "Quit"},
-	}
 	selected := 0
 	for {
 		var err error
@@ -178,20 +213,44 @@ func reviewSong(ctx context.Context, out io.Writer, path string, tags songTags, 
 			return songReview{decision: reviewQuit}, nil
 		}
 		proposal := proposeSong(path, tags, matches[selected])
-		if err := displayProposal(out, proposal); err != nil {
-			return songReview{}, reviewUIError{err}
+		var review songReview
+		if releases == nil {
+			review, err = reviewProposal(ctx, out, proposal, choose, applyLabel)
+		} else {
+			review, err = reviewRelease(ctx, out, proposal, tags.release, releases, choose, applyLabel)
 		}
-		if !proposal.changed() {
-			return songReview{decision: reviewUnchanged, proposal: proposal}, nil
-		}
-		action, err := choose(ctx, "Review this proposal", actions, int(reviewSkip))
 		if err != nil {
 			return songReview{}, err
 		}
-		if reviewDecision(action) != reviewChooseAgain {
-			return songReview{decision: reviewDecision(action), proposal: proposal}, nil
+		if review.decision != reviewChooseAgain {
+			return review, nil
 		}
 	}
+}
+
+func reviewProposal(ctx context.Context, out io.Writer, proposal songProposal, choose menuSelector, applyLabel string) (songReview, error) {
+	if err := displayProposal(out, proposal); err != nil {
+		return songReview{}, reviewUIError{err}
+	}
+	if !proposal.changed() {
+		return songReview{decision: reviewUnchanged, proposal: proposal}, nil
+	}
+	actions := []menuOption{
+		reviewSkip:        {label: "Skip song"},
+		reviewAccept:      {label: applyLabel},
+		reviewChooseAgain: {label: "Choose another recording"},
+		reviewQuit:        {label: "Quit"},
+	}
+	releaseAction := len(actions)
+	if proposal.releaseID != "" {
+		actions = append(actions, menuOption{label: "Choose another release"})
+	}
+	action, err := choose(ctx, "Review this proposal", actions, int(reviewSkip))
+	decision := reviewDecision(action)
+	if action == releaseAction && proposal.releaseID != "" {
+		decision = reviewChooseRelease
+	}
+	return songReview{decision: decision, proposal: proposal}, err
 }
 
 func recordingOptions(matches []recording) []menuOption {
@@ -217,6 +276,13 @@ func recordingOptions(matches []recording) []menuOption {
 type songProposal struct {
 	path, recordingID string
 	title, artist     tagComparison
+	releaseID         string
+	releaseFields     []proposalField
+}
+
+type proposalField struct {
+	id, label string
+	tag       tagComparison
 }
 
 type tagComparison struct {
@@ -240,21 +306,37 @@ func proposeSong(path string, tags songTags, match recording) songProposal {
 }
 
 func (proposal songProposal) changed() bool {
-	return proposal.title.changed() || proposal.artist.changed()
+	return slices.ContainsFunc(proposal.fields(), func(field proposalField) bool { return field.tag.changed() })
+}
+
+func (proposal songProposal) fields() []proposalField {
+	return append([]proposalField{
+		{id: "TIT2", label: "Title", tag: proposal.title},
+		{id: "TPE1", label: "Artist", tag: proposal.artist},
+	}, proposal.releaseFields...)
 }
 
 func displayProposal(out io.Writer, proposal songProposal) error {
 	var text strings.Builder
-	fmt.Fprintf(&text, "\nFile: %s\nMusicBrainz recording: %s\n\n", safe(proposal.path), safe(proposal.recordingID))
+	fmt.Fprintf(&text, "\nFile: %s\nMusicBrainz recording: %s\n", safe(proposal.path), safe(proposal.recordingID))
+	if proposal.releaseID != "" {
+		fmt.Fprintf(&text, "MusicBrainz release: %s\n", safe(proposal.releaseID))
+	}
+	text.WriteByte('\n')
 	columns := tabwriter.NewWriter(&text, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(columns, "Field\tCurrent\tProposed\tStatus")
-	writeTagComparison(columns, "Title", proposal.title)
-	writeTagComparison(columns, "Artist", proposal.artist)
+	for _, field := range proposal.fields() {
+		writeTagComparison(columns, field.label, field.tag)
+	}
 	if err := columns.Flush(); err != nil {
 		return err
 	}
 	if !proposal.changed() {
-		text.WriteString("\nThe title and artist already agree.\n")
+		if proposal.releaseID == "" {
+			text.WriteString("\nThe title and artist already agree.\n")
+		} else {
+			text.WriteString("\nThe proposed tags already agree.\n")
+		}
 	}
 	_, err := io.WriteString(out, text.String())
 	return err
