@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** Inspect MP3s offline, search MusicBrainz, and review or apply title and artist changes one song at a time in the terminal.
+**Status.** Inspect MP3s offline, search by embedded tags or audio fingerprint, and review or apply title and artist changes one song at a time in the terminal.
 
 ## First MVP
 
@@ -98,6 +98,21 @@ Artist [TPE1]: Example Artist
 The command displays up to five recording candidates in MusicBrainz order, including title, artist credit, and recording ID. Review candidates before treating any as a match. The catalog can offer several recordings with the same title and artist. See the [live validation results](docs/sample-validation.md#musicbrainz-lookup).
 
 A completed search exits `0`, including when it returns zero candidates. Input, service, and output errors exit `1`. Invalid arguments exit `2`. The request times out after 10 seconds. Concurrent lookups that reach the local limit report an error. l1ner uses a one-byte rate marker at `$XDG_CACHE_HOME/l1ner/musicbrainz-rate`, defaulting to `$HOME/.cache/l1ner/musicbrainz-rate`, to coordinate the [MusicBrainz rate limit](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting) across invocations. Search terms and results are held in memory, and the MP3 is opened read-only.
+
+### Identify a song from audio
+
+Install Chromaprint's `fpcalc` utility on `PATH` and register an application with AcoustID to get its application key. The hosted API is free for non-commercial use. [Chromaprint downloads](https://acoustid.org/chromaprint) · [Register an AcoustID application](https://acoustid.org/new-application) · [AcoustID API](https://acoustid.org/webservice)
+
+```sh
+export L1NER_ACOUSTID_KEY='your-application-key'
+./bin/l1ner identify music/song.mp3
+```
+
+`identify` reads one MP3 and calculates its audio fingerprint locally. It sends the fingerprint and duration to AcoustID over HTTPS. The MP3, path, and tags stay local. Identification works with missing or incorrect tags and leaves the file byte for byte as it was.
+
+Review the returned MusicBrainz recording candidates by title, artist, ID, and AcoustID score. Different recording IDs remain separate, and repeated hits for the same ID use the highest score. The score ranks fingerprint hits. Verify the recording before relying on its metadata. See the [live validation](docs/sample-validation.md#audio-identification).
+
+A completed search exits `0`, including when it returns zero linked recordings. Input, configuration, service, and output errors exit `1`. Invalid arguments exit `2`. Ctrl+C exits `130`. The local calculation times out after 30 seconds and the request after 10. AcoustID lookups use a separate one-byte cache marker to coordinate at most one request per second across invocations using the same cache directory.
 
 ### Interactive song preview
 

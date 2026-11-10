@@ -1,6 +1,6 @@
 # Contributing to l1ner
 
-The CLI inspects local MP3 metadata on Linux and offers MusicBrainz lookup, interactive preview, and per-song approval for edits. Start with the [README](README.md), [product vision](docs/vision.md), and [technical plan](docs/technical-plan.md). Upcoming work is tracked in [TODO.md](TODO.md).
+The CLI inspects local MP3 metadata on Linux and offers lookup by tags or audio, interactive preview, and per-song approval for edits. Start with the [README](README.md), [product vision](docs/vision.md), and [technical plan](docs/technical-plan.md). Upcoming work is tracked in [TODO.md](TODO.md).
 
 ## Development setup
 
@@ -13,6 +13,8 @@ go run . --help
 ```
 
 Local audio belongs in the ignored `music/` directory. Tests must run without personal music files or external services; build metadata fixtures directly in tests.
+
+The root `main.go` launches the commands in `internal/cli`. Audio fingerprinting and AcoustID lookup live in `internal/identify`. The two services share the local request lock in `internal/ratelimit`.
 
 ## Go style
 
@@ -45,6 +47,8 @@ CLI tests live in `internal/cli`. `inspect_test.go` uses generated MP3 tag fixtu
 
 `lookup_test.go` uses generated tags to check extraction, CLI behavior, and file integrity. `musicbrainz_test.go` uses a local HTTP server to check request encoding, the rate limit, and provider responses. The [live sample checks](docs/sample-validation.md#musicbrainz-lookup) are manual.
 
+The audio identification tests use a stub `fpcalc` and a local HTTP server. They cover the data sent to AcoustID, ambiguous and empty results, errors, and unchanged input bytes. No AcoustID key or installed Chromaprint utility is needed for automated tests.
+
 `preview_test.go` uses generated tags and a local HTTP server. Linux pseudo-terminal tests exercise the keyboard workflow and verify terminal restoration and file integrity.
 
 `rewrite_test.go` and `fixfile_test.go` exercise frame preservation, verified replacement, backup collisions, concurrent changes, and recovery. `fix_test.go` drives the approval prompt in a Linux pseudo-terminal using generated MP3s and a local HTTP server.
@@ -72,7 +76,7 @@ For refactors, preserve existing output, error messages, exit codes, and unchang
 `FuzzInspectTag` uses generated ID3v2.3 and ID3v2.4 fixtures to exercise tag reading and frame decoding in memory. It accepts parse errors for malformed inputs and checks that the parser does not panic. `go test ./...` runs the seed inputs. To run a one-minute fuzzing session locally, use:
 
 ```sh
-go test -run='^$' -fuzz='^FuzzInspectTag$' -fuzztime=1m -parallel=2 .
+go test -run='^$' -fuzz='^FuzzInspectTag$' -fuzztime=1m -parallel=2 ./internal/cli
 ```
 
 ## Continuous integration
