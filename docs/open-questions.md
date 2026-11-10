@@ -173,11 +173,15 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] Agree on the provider and what data may leave the machine.
 
-  **Decision.** Audio identification is opt-in through `identify` or a single-song `preview` or `fix` with `--from-audio`. These lookups send a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. Tag-based commands work without AcoustID setup. [Setup guide](audio-identification.md)
+  **Decision.** Audio identification is opt-in through `identify` or `preview` or `fix` with `--from-audio`. These lookups send a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. Tag-based commands work without AcoustID setup. [Setup guide](audio-identification.md)
 
 - [x] Agree on the first presentation of fingerprint matches.
 
   **Decision.** Show each distinct linked MusicBrainz recording for review, ordered by AcoustID score. The score ranks fingerprint hits. Audio-assisted preview and fix offer recordings with both title and artist, and require a selection before displaying a proposal. Only explicit Apply in `fix` can write the approved fields. Confidence thresholds remain open. See the [live validation](sample-validation.md#audio-identification).
+
+- [x] How should a folder use audio matching?
+
+  **Decision.** `fix --from-audio <directory>` looks up each immediate MP3 sequentially and uses the existing per-song approval and backup workflow. The local AcoustID wait can be canceled. The batch reports per-file errors and the existing six outcome counts. [Batch usage](audio-identification.md#review-a-folder)
 
 ### Broader provider questions
 
@@ -215,7 +219,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. `preview` and `fix` accept `--from-audio` for one MP3. Flags precede the path.
+  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

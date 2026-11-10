@@ -55,7 +55,7 @@ The audio identification tests use a stub `fpcalc` and a local HTTP server. They
 
 `rewrite_test.go` and `fixfile_test.go` exercise frame preservation, verified replacement, backup collisions, concurrent changes, and recovery. `fix_test.go` drives the approval prompt in a Linux pseudo-terminal using generated MP3s and a local HTTP server.
 
-`fixbatch_test.go` uses a local server and a Linux pseudo-terminal to verify folder order, per-song approvals, continuation after service failures, cancellation, and summary counts.
+`fixbatch_test.go` uses a local server, a stub AcoustID search, and Linux pseudo-terminals to verify folder order, per-song approvals, continuation after service failures, cancellation, and summary counts.
 
 To focus on output behavior while developing:
 

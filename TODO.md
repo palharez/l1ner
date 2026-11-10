@@ -80,6 +80,14 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 2. [x] Connect audio review to the verified writer. Add missing fields or create a tag for an untagged MP3 only after Apply. Check audio integrity, exact backups, and unchanged files when skipped. Commit as `feat(fix): apply approved audio matches to one song`.
 3. [x] Run the contributor checks and exercise the built CLI on a disposable tagless MP3. See the [live validation](docs/sample-validation.md#audio-assisted-repair) and [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document and validate audio-assisted repair`.
 
+## Milestone — Fix a folder from audio
+
+**Branch** `milestone/audio-assisted-batch`. `l1ner fix --from-audio <directory>` reviews the immediate MP3s in lexical order, with explicit Apply and a backup for each edited song.
+
+1. [x] Add a cancellable, bounded wait for the local AcoustID rate limit during a batch. Verify that waiting keeps the fingerprint and that service errors are reported for the song. Commit as `feat(identify): wait for AcoustID capacity during batches`.
+2. [x] Route audio matches through the existing batch review and summary. Verify Apply, Skip, per-file failure continuation, and pending songs. Commit as `feat(fix): review a folder using audio matches`.
+3. [x] Run the contributor checks, validate the built CLI, and document folder usage. Commit as `docs(fix): document audio-assisted folder review`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.

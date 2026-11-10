@@ -23,8 +23,12 @@ import (
 const (
 	acoustIDEndpoint = "https://api.acoustid.org/v2/lookup"
 	acoustIDAgent    = "l1ner/devel (https://github.com/palharez/l1ner)"
+	acoustIDInterval = time.Second
+	acoustIDTimeout  = 10 * time.Second
 	maxResponse      = 4 << 20
 )
+
+var errAcoustIDCooldown = errors.New("AcoustID lookup is rate limited locally; wait a second and try again")
 
 // Candidate is a MusicBrainz recording linked to an AcoustID fingerprint match.
 type Candidate struct {
@@ -43,10 +47,20 @@ func Search(ctx context.Context, path, applicationKey string) ([]Candidate, erro
 
 // SearchFile fingerprints the open file so replacing its path cannot change the audio being reviewed.
 func SearchFile(ctx context.Context, file *os.File, applicationKey string) ([]Candidate, error) {
+	return searchOpenFile(ctx, file, applicationKey, false)
+}
+
+// SearchFileForBatch waits for the local AcoustID request limit before sending the fingerprint.
+func SearchFileForBatch(ctx context.Context, file *os.File, applicationKey string) ([]Candidate, error) {
+	return searchOpenFile(ctx, file, applicationKey, true)
+}
+
+func searchOpenFile(ctx context.Context, file *os.File, applicationKey string, waitForRateLimit bool) ([]Candidate, error) {
 	client, err := localAcoustIDClient()
 	if err != nil {
 		return nil, err
 	}
+	client.waitForRateLimit = waitForRateLimit
 	sample, err := runFPCalc(ctx, "/proc/self/fd/3", file)
 	if err != nil {
 		return nil, err
@@ -63,8 +77,9 @@ func localAcoustIDClient() (acoustIDClient, error) {
 }
 
 type acoustIDClient struct {
-	endpoint string
-	rateFile string
+	endpoint         string
+	rateFile         string
+	waitForRateLimit bool
 }
 
 func (client acoustIDClient) identify(ctx context.Context, path, applicationKey string) ([]Candidate, error) {
@@ -89,13 +104,7 @@ func (client acoustIDClient) lookup(ctx context.Context, sample fingerprint, app
 	}
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("User-Agent", acoustIDAgent)
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	rateFile, err := ratelimit.Acquire(client.rateFile, "AcoustID", time.Second)
-	if errors.Is(err, ratelimit.ErrBusy) {
-		return nil, errors.New("AcoustID lookup is rate limited locally; wait a second and try again")
-	}
+	rateFile, err := client.acquireLookupSlot(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +112,31 @@ func (client acoustIDClient) lookup(ctx context.Context, sample fingerprint, app
 	return requestCandidates(request)
 }
 
+func (client acoustIDClient) acquireLookupSlot(ctx context.Context) (*os.File, error) {
+	waitCtx, cancel := context.WithTimeout(ctx, acoustIDTimeout)
+	defer cancel()
+	for waitCtx.Err() == nil {
+		file, err := ratelimit.Acquire(client.rateFile, "AcoustID", acoustIDInterval)
+		if !errors.Is(err, ratelimit.ErrBusy) {
+			return file, err
+		}
+		if !client.waitForRateLimit {
+			break
+		}
+		select {
+		case <-waitCtx.Done():
+		case <-time.After(acoustIDInterval):
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return nil, errAcoustIDCooldown
+}
+
 func requestCandidates(request *http.Request) ([]Candidate, error) {
 	client := http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: acoustIDTimeout,
 		CheckRedirect: func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		},

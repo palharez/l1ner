@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-const fixSyntax = "l1ner fix <file-or-directory>\n       l1ner fix --from-audio <file.mp3>"
+const fixSyntax = "l1ner fix [--from-audio] <file-or-directory>"
 
 func fixFile(path string, out io.Writer, search recordingSearch, choose menuSelector) error {
 	decision, err := fixSong(context.Background(), path, out, search, nil, choose)

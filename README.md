@@ -149,7 +149,7 @@ Apply, Skip, Quit, and a review with no changes or candidates exit `0`. Input, s
 
 Use `--from-audio` when the MP3's title or artist is missing or wrong. After [optional AcoustID setup](docs/audio-identification.md#set-up-on-linux), choose a recording in the same keyboard picker. Its details show the AcoustID score. The proposal shows absent fields as **(missing)** and displays the title and artist to add or replace. Preview stays read-only.
 
-In `fix`, **Apply changes to this MP3** writes the approved fields and saves the exact original as `.l1ner.bak`. A tagless MP3 gets an ID3v2.4 tag. An existing supported ID3v2 tag keeps its version and unrelated frames. The same file safety and recovery rules apply. The flag accepts one MP3, and the standard tag-based commands work without AcoustID setup.
+In `fix`, **Apply changes to this MP3** writes the approved fields and saves the exact original as `.l1ner.bak`. A tagless MP3 gets an ID3v2.4 tag. An existing supported ID3v2 tag keeps its version and unrelated frames. The same file safety and recovery rules apply. The standard tag-based commands work without AcoustID setup.
 
 ### Fix a folder
 
@@ -159,7 +159,13 @@ In `fix`, **Apply changes to this MP3** writes the approved fields and saves the
 
 Review the regular `.mp3` files directly inside the folder in lexical order. Extensions are case-insensitive, and symlinks are skipped. The wizard shows progress such as **Song 3 of 20**. **Apply** edits and backs up the displayed song immediately. **Skip** advances to the next song. **Quit** or Ctrl+C preserves earlier approved edits and leaves the current song pending unless its edit already committed.
 
-The batch leaves at least a second between MusicBrainz requests and continues after individual file or service failures. The summary counts applied, skipped, unchanged, unresolved, failed, and pending songs. A lookup with zero candidates is unresolved. An existing backup is a per-file failure, so rerunning the folder preserves backups and starts a new review from the beginning.
+To identify each song by sound, use `--from-audio` with your AcoustID application key and `fpcalc`. This also lets you review MP3s with missing or incorrect tags. [AcoustID setup and batch behavior](docs/audio-identification.md#review-a-folder)
+
+```sh
+./bin/l1ner fix --from-audio music/
+```
+
+The batch paces lookups and continues after individual file or service failures. The summary counts applied, skipped, unchanged, unresolved, failed, and pending songs. A lookup with zero eligible candidates is unresolved. An existing backup is a per-file failure, so rerunning the folder preserves backups and starts a new review from the beginning.
 
 An empty folder or a completed or quit batch with zero failures exits `0`. A scan, file, or output failure exits `1`. Ctrl+C exits `130`. Use the same per-song recovery command to restore an applied song.
 
