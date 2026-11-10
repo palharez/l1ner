@@ -34,7 +34,7 @@ The implemented CLI inspects local MP3 files and directories on Linux, read-only
 3. [x] **Wire up `lookup`.** Accept one MP3 path and show candidates in service order. Preserve separate recordings even when they share a title and credit. Escape control characters in terminal output. Use exit `0` for a completed search including zero results, `1` for input, service, or output failures, and `2` for invalid arguments. Test the command with a local server, including zero requests on invalid tags and identical file checksums before and after lookup. Keep existing `inspect` tests passing. Commit as `feat(lookup): add single-file lookup command`.
 4. [x] **Verify and document the milestone.** Run `gofmt -w *.go`, `go test ./...`, `go vet ./...`, and `go build -o bin/l1ner .`. The original reference lookup missed its expected version. “My Home Town” returned the expected recording, and all checked input SHA-256 hashes matched before and after. See [usage](README.md#musicbrainz-lookup) and the [live validation results](docs/sample-validation.md#musicbrainz-lookup). Commit as `docs(lookup): document usage and live validation`.
 
-Batch lookup, fingerprinting, and release selection are future milestones.
+Fingerprinting and release selection are future milestones.
 
 ## Milestone — Interactive song preview
 
@@ -61,13 +61,13 @@ Batch lookup, fingerprinting, and release selection are future milestones.
 
 1. [x] Pace the MusicBrainz requests with a cancellable wait and keep the existing shared rate limit. Commit as `feat(fix): pace MusicBrainz searches during batch review`.
 2. [x] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
-3. [ ] Verify the batch with generated MP3s, a local server, and terminal input. Document usage and open a PR for review. Commit as `docs(fix): document batch review and outcomes`.
+3. [x] Verified all six outcomes with generated MP3s, a local server, and terminal input. Documented [folder usage](README.md#fix-a-folder) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document batch review and outcomes`.
 
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
 - [ ] Evaluate recording retrieval across a broader sample and research additional metadata services using `docs/open-questions.md`.
-- [ ] Extend per-song review and verified edits to directories. Agree on batch navigation, resuming reviews, and integrity and recovery behavior for interrupted runs.
+- [ ] Agree on recursive fixing, revisiting decisions, and resuming reviews.
 - [ ] Consider packaging and other operating systems when local Linux usage is established.
 - [ ] Revisit `cmd/l1ner/` and `internal/` packages when additional commands or responsibilities justify them. Keep the current layout for the single-command MVP.
 

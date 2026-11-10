@@ -204,7 +204,11 @@ Users can explicitly search MusicBrainz for one MP3 using its embedded title and
 
 ### Implemented Extension — Single-Song Review and Fix
 
-The terminal wizard lets the listener choose a recording and review the proposed title and artist. `fix` applies those fields after explicit approval, preserves the audio and unrelated tags, and saves an exact backup of the source file. Directory edits are a separate milestone. See the [fix and recovery workflow](../README.md#fix-one-song).
+The terminal wizard lets the listener choose a recording and review the proposed title and artist. `fix` applies those fields after explicit approval, preserves the audio and unrelated tags, and saves an exact backup of the source file. See the [fix and recovery workflow](../README.md#fix-one-song).
+
+### Implemented Extension — Folder Fixes
+
+`fix` also reviews the immediate MP3s in a folder one at a time. Each approval applies only to the displayed song. The listener can skip files or quit with the remaining songs pending. See the [folder workflow](../README.md#fix-a-folder).
 
 ## 8. Success Criteria
 
@@ -225,7 +229,7 @@ A directory scan processes only matching regular MP3 files in lexical traversal 
 
 ### User Acceptance
 
-On 2026-11-10, the user accepted the inspection milestone, including directory scanning. Reviewing each song in the batch output remains cumbersome but was acceptable for the inspection stage. The single-song fix requires per-song review and explicit acceptance. Future directory editing must carry that decision forward for every song.
+On 2026-11-10, the user accepted the inspection milestone, including directory scanning. Reviewing each song in the batch output remains cumbersome but was acceptable for the inspection stage. Fixing requires per-song review and explicit acceptance, including when working through a folder.
 
 ## 9. Long-Term Vision
 

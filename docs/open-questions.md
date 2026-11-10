@@ -81,7 +81,7 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 - [x] Should proposed fixes require acceptance per song?
 
-  **Decision:** Present proposed changes for each song and require the user's acceptance before modifying that file. The single-song `fix` command implements this requirement. Batch approval is a future milestone.
+  **Decision:** Present proposed changes for each song and require the user's acceptance before modifying that file. Both file and directory forms of `fix` enforce this requirement.
 
 - [ ] How should per-song review show existing and proposed values, support skipping/rejection, and navigate a batch?
 
@@ -118,7 +118,7 @@ Artist     Example Artist   Example Artist  same
 
 Highlight Skip by default on the proposal screen. Accept records the decision for the current run and prints a summary of the accepted proposal. Skip ends review of that song. Quit and Ctrl+C exit the review. If the tags already agree, show that outcome and finish. The milestone opens the MP3 read-only, and the terminal is restored when the wizard exits.
 
-**Proposed batch behavior.** Present the same comparison one song at a time with progress such as `Song 3 of 20`. Accept applies only to the displayed song. Skip advances to the next song, and Quit ends the review with the remaining songs pending. Summarize accepted, skipped, unresolved, and failed items. Keep the per-song proposal and decision separate from terminal input so the batch workflow can reuse them. Directory traversal, revisiting prior decisions, saved sessions, and safe application of changes need their own acceptance criteria.
+**Implemented batch behavior.** `l1ner fix <directory>` reviews immediate MP3s in lexical order with progress such as `Song 3 of 20`. Apply writes and backs up the displayed song, Skip advances, and Quit leaves the current and later songs pending. The summary counts applied, skipped, unchanged, unresolved, failed, and pending songs. Revisiting decisions and saved sessions remain open. See [folder usage](../README.md#fix-a-folder).
 
 ## Broader Product — Product Validation
 
@@ -190,7 +190,9 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [ ] What backup and recovery strategies should be supported?
 - [ ] How can metadata modifications be made safely?
-- [ ] How should interrupted batch operations be handled?
+- [x] How does the first batch workflow handle interruption?
+
+  **Decision:** Stop the review and keep completed replacements and their backups. Count the current song as pending if its replacement had yet to commit. Resume behavior and persistent review state remain open.
 - [x] How does current inspection verify that files remain unchanged?
 
   **Implemented:** Tests compare whole-file SHA-256, size, and permissions before and after inspection.
@@ -201,7 +203,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, `l1ner preview <file.mp3>`, and `l1ner fix <file.mp3>`. Flags precede the path.
+  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, `l1ner preview <file.mp3>`, and `l1ner fix <file-or-directory>`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.
