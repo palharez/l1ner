@@ -14,7 +14,7 @@ import (
 const lookupSyntax = "l1ner lookup <file.mp3>"
 
 func runLookup(args []string, out, errOut io.Writer, search recordingSearch) int {
-	path, err := parseSongPath("lookup", args)
+	path, _, err := parseSongPath("lookup", args)
 	if errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(out, "Usage: "+lookupSyntax)
 		fmt.Fprintln(out, "Send the MP3's embedded title and artist to MusicBrainz and show recording candidates.")
@@ -32,19 +32,22 @@ func runLookup(args []string, out, errOut io.Writer, search recordingSearch) int
 	return 0
 }
 
-func parseSongPath(command string, args []string) (string, error) {
+func parseSongPath(command string, args []string) (path string, fromAudio bool, err error) {
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
+	if command == "preview" {
+		flags.BoolVar(&fromAudio, "from-audio", false, "use AcoustID fingerprint matches")
+	}
 	if err := flags.Parse(args); err != nil {
-		return "", err
+		return "", false, err
 	}
 	if flags.NArg() != 1 {
 		if command == "fix" {
-			return "", errors.New("expected one MP3 file or directory path")
+			return "", false, errors.New("expected one MP3 file or directory path")
 		}
-		return "", errors.New("expected one MP3 file path")
+		return "", false, errors.New("expected one MP3 file path")
 	}
-	return flags.Arg(0), nil
+	return flags.Arg(0), fromAudio, nil
 }
 
 func lookupFile(path string, out io.Writer, search recordingSearch) error {
@@ -106,6 +109,25 @@ func lookupTagsFromEntries(entries []entry) (songTags, error) {
 func lookupTag(entries []entry, id, label string) ([]string, error) {
 	var normalized string
 	var values []string
+	for _, value := range songTagValues(entries, id) {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		if normalized != "" && normalized != trimmed {
+			return nil, fmt.Errorf("conflicting %s tags (%s)", label, id)
+		}
+		normalized = trimmed
+		values = append(values, value)
+	}
+	if len(values) == 0 {
+		return nil, fmt.Errorf("missing %s tag (%s)", label, id)
+	}
+	return values, nil
+}
+
+func songTagValues(entries []entry, id string) []string {
+	var values []string
 	seen := make(map[string]bool)
 	for _, entry := range entries {
 		if entry.id != id {
@@ -117,22 +139,11 @@ func lookupTag(entries []entry, id, label string) ([]string, error) {
 		}
 		// The decoder returns NUL-separated ID3v2.4 values as a single string.
 		for part := range strings.SplitSeq(text.Text, "\x00") {
-			trimmed := strings.TrimSpace(part)
-			if trimmed == "" {
-				continue
-			}
-			if normalized != "" && normalized != trimmed {
-				return nil, fmt.Errorf("conflicting %s tags (%s)", label, id)
-			}
-			normalized = trimmed
 			if !seen[part] {
 				values = append(values, part)
 				seen[part] = true
 			}
 		}
 	}
-	if len(values) == 0 {
-		return nil, fmt.Errorf("missing %s tag (%s)", label, id)
-	}
-	return values, nil
+	return values
 }

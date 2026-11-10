@@ -173,11 +173,11 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] Agree on the provider and what data may leave the machine.
 
-  **Decision.** Audio identification is opt-in. Only an explicit `identify` invocation sends a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. All other commands work without AcoustID setup. [Setup guide](audio-identification.md)
+  **Decision.** Audio identification is opt-in through `identify` or a single-song `preview` or `fix` with `--from-audio`. These lookups send a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. Tag-based commands work without AcoustID setup. [Setup guide](audio-identification.md)
 
 - [x] Agree on the first presentation of fingerprint matches.
 
-  **Decision.** Show each distinct linked MusicBrainz recording for review, ordered by AcoustID score. The score ranks fingerprint hits. Selection for tag proposals and confidence rules remain open. See the [live validation](sample-validation.md#audio-identification).
+  **Decision.** Show each distinct linked MusicBrainz recording for review, ordered by AcoustID score. The score ranks fingerprint hits. Audio-assisted preview and fix offer recordings with both title and artist, and require a selection before displaying a proposal. Only explicit Apply in `fix` can write the approved fields. Confidence thresholds remain open. See the [live validation](sample-validation.md#audio-identification).
 
 ### Broader provider questions
 

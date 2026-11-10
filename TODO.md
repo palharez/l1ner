@@ -72,6 +72,14 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 3. [x] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. See the [setup](README.md#identify-a-song-from-audio) and [live check](docs/sample-validation.md#audio-identification). Follow the [PR workflow](CONTRIBUTING.md#feature-workflow).
 4. [x] Mark audio identification as optional in help and document how to register an AcoustID application and use its key. Verify the standard commands work without AcoustID setup. Commit as `docs(identify): explain optional AcoustID setup`.
 
+## Milestone — Fix one song from audio
+
+**Branch** `milestone/audio-assisted-fix`. Use `--from-audio` on `preview` and `fix` to review one MP3 using AcoustID. The existing tag-based commands work without AcoustID setup.
+
+1. [x] Connect the fingerprint matches to the read-only preview. Show missing fields and require selection of a recording. Verify in the terminal with generated fixtures. Commit as `feat(preview): review fingerprint matches for one song`.
+2. [ ] Connect audio review to the verified writer. Add missing fields or create a tag for an untagged MP3 only after Apply. Check audio integrity, exact backups, and unchanged files when skipped. Commit as `feat(fix): apply approved audio matches to one song`.
+3. [ ] Run the contributor checks and exercise the built CLI on a disposable tagless MP3. Document the result and open the milestone PR. Commit as `docs(fix): document and validate audio-assisted repair`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.

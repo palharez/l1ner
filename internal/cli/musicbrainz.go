@@ -39,6 +39,7 @@ type musicBrainzClient struct {
 type recording struct {
 	id, title, artist, disambiguation string
 	lengthMS                          int64
+	acoustIDScore                     *float64
 }
 
 func searchMusicBrainz(ctx context.Context, title, artist string) ([]recording, error) {

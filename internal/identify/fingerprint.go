@@ -34,14 +34,17 @@ func fingerprintMP3(ctx context.Context, path string) (fingerprint, error) {
 	if err != nil {
 		return fingerprint{}, err
 	}
-	return runFPCalc(ctx, absolute)
+	return runFPCalc(ctx, absolute, nil)
 }
 
-func runFPCalc(ctx context.Context, path string) (fingerprint, error) {
+func runFPCalc(ctx context.Context, path string, file *os.File) (fingerprint, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	// Force the MP3 demuxer so a file with the extension cannot be interpreted as a playlist.
 	cmd := exec.CommandContext(ctx, "fpcalc", "-json", "-format", "mp3", path)
+	if file != nil {
+		cmd.ExtraFiles = []*os.File{file} // The first inherited file is descriptor 3.
+	}
 	cmd.WaitDelay = time.Second
 	stdout := &processOutput{limit: 64 << 10}
 	stderr := &processOutput{limit: 1024}

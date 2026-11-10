@@ -32,12 +32,16 @@ func inspect(path string) ([]entry, error) {
 	}
 	defer file.Close()
 
+	return inspectOpenMP3(file)
+}
+
+func inspectOpenMP3(file *os.File) ([]entry, error) {
 	info, err := file.Stat()
 	if err != nil {
 		return nil, err
 	}
 	if !info.Mode().IsRegular() {
-		return nil, fmt.Errorf("not a regular file: %s", path)
+		return nil, fmt.Errorf("not a regular file: %s", file.Name())
 	}
 
 	header, body, err := readTag(file, info.Size())
