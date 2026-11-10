@@ -88,6 +88,14 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 2. [x] Route audio matches through the existing batch review and summary. Verify Apply, Skip, per-file failure continuation, and pending songs. Commit as `feat(fix): review a folder using audio matches`.
 3. [x] Run the contributor checks, validate the built CLI, and document folder usage. Commit as `docs(fix): document audio-assisted folder review`.
 
+## Milestone — Album and track tagging
+
+**Branch** `milestone/release-tagging`. Add opt-in release selection to `preview` and `fix`, with one shared review for single files and folder fixes. Approve each song before writing its album, album artist, track number, or disc number.
+
+1. [x] Browse MusicBrainz releases for the selected recording and verify edition-specific track positions. Commit as `feat(musicbrainz): browse release tracks for a recording`.
+2. [ ] Reuse the release picker and verified writer for preview, single-file fix, and batch fix. Check per-song approval, exact backups, and unchanged unrelated data. Commit as `feat(fix): review and apply release tags`.
+3. [ ] Verify the CLI and document the workflow. Commit as `docs(fix): document album and track tagging`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.

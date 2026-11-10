@@ -43,16 +43,23 @@ type recording struct {
 }
 
 func searchMusicBrainz(ctx context.Context, title, artist string) ([]recording, error) {
-	cache, err := os.UserCacheDir()
+	client, err := localMusicBrainzClient(musicBrainzEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("find MusicBrainz rate limit directory: %w", err)
-	}
-	client := musicBrainzClient{
-		endpoint: musicBrainzEndpoint,
-		rateFile: filepath.Join(cache, "l1ner", "musicbrainz-rate"),
-		timeout:  musicBrainzTimeout,
+		return nil, err
 	}
 	return client.search(ctx, title, artist)
+}
+
+func localMusicBrainzClient(endpoint string) (musicBrainzClient, error) {
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return musicBrainzClient{}, fmt.Errorf("find MusicBrainz rate limit directory: %w", err)
+	}
+	return musicBrainzClient{
+		endpoint: endpoint,
+		rateFile: filepath.Join(cache, "l1ner", "musicbrainz-rate"),
+		timeout:  musicBrainzTimeout,
+	}, nil
 }
 
 func (c musicBrainzClient) search(ctx context.Context, title, artist string) ([]recording, error) {
@@ -63,15 +70,24 @@ func (c musicBrainzClient) search(ctx context.Context, title, artist string) ([]
 	if err != nil {
 		return nil, err
 	}
-	rateFile, err := ratelimit.Acquire(c.rateFile, "MusicBrainz", musicBrainzInterval)
-	if errors.Is(err, ratelimit.ErrBusy) {
-		return nil, errMusicBrainzCooldown
-	}
+	rateFile, err := c.acquireSlot()
 	if err != nil {
 		return nil, err
 	}
 	defer rateFile.Close()
-	return requestRecordings(request, c.timeout)
+	data, err := fetchMusicBrainz(request, c.timeout)
+	if err != nil {
+		return nil, err
+	}
+	return decodeRecordings(data)
+}
+
+func (c musicBrainzClient) acquireSlot() (*os.File, error) {
+	rateFile, err := ratelimit.Acquire(c.rateFile, "MusicBrainz", musicBrainzInterval)
+	if errors.Is(err, ratelimit.ErrBusy) {
+		return nil, errMusicBrainzCooldown
+	}
+	return rateFile, err
 }
 
 func newRecordingSearchRequest(ctx context.Context, endpoint, title, artist string) (*http.Request, error) {
@@ -97,7 +113,7 @@ func newRecordingSearchRequest(ctx context.Context, endpoint, title, artist stri
 	return request, nil
 }
 
-func requestRecordings(request *http.Request, timeout time.Duration) ([]recording, error) {
+func fetchMusicBrainz(request *http.Request, timeout time.Duration) ([]byte, error) {
 	client := http.Client{
 		Timeout: timeout,
 		CheckRedirect: func(*http.Request, []*http.Request) error {
@@ -119,7 +135,14 @@ func requestRecordings(request *http.Request, timeout time.Duration) ([]recordin
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("MusicBrainz returned HTTP %d", response.StatusCode)
 	}
-	return decodeRecordings(response.Body)
+	data, err := io.ReadAll(io.LimitReader(response.Body, maxSearchResponse+1))
+	if err != nil {
+		return nil, fmt.Errorf("read MusicBrainz response: %w", err)
+	}
+	if len(data) > maxSearchResponse {
+		return nil, errors.New("MusicBrainz response exceeds the size limit")
+	}
+	return data, nil
 }
 
 // paceBatchSearch is used sequentially by one batch. Leave a full interval
@@ -152,27 +175,14 @@ func paceBatchSearch(search recordingSearch) recordingSearch {
 	}
 }
 
-func decodeRecordings(body io.Reader) ([]recording, error) {
-	data, err := io.ReadAll(io.LimitReader(body, maxSearchResponse+1))
-	if err != nil {
-		return nil, fmt.Errorf("read MusicBrainz response: %w", err)
-	}
-	if len(data) > maxSearchResponse {
-		return nil, errors.New("MusicBrainz response exceeds the size limit")
-	}
+func decodeRecordings(data []byte) ([]recording, error) {
 	var result struct {
 		Recordings []struct {
-			ID             string `json:"id"`
-			Title          string `json:"title"`
-			Disambiguation string `json:"disambiguation"`
-			LengthMS       int64  `json:"length"`
-			ArtistCredit   []struct {
-				Name       string `json:"name"`
-				JoinPhrase string `json:"joinphrase"`
-				Artist     struct {
-					Name string `json:"name"`
-				} `json:"artist"`
-			} `json:"artist-credit"`
+			ID             string         `json:"id"`
+			Title          string         `json:"title"`
+			Disambiguation string         `json:"disambiguation"`
+			LengthMS       int64          `json:"length"`
+			ArtistCredit   []artistCredit `json:"artist-credit"`
 		} `json:"recordings"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
@@ -184,25 +194,41 @@ func decodeRecordings(body io.Reader) ([]recording, error) {
 	limit := min(len(result.Recordings), musicBrainzLimit)
 	matches := make([]recording, 0, limit)
 	for _, item := range result.Recordings[:limit] {
-		var credit strings.Builder
-		for _, artist := range item.ArtistCredit {
-			name := artist.Name
-			if name == "" {
-				name = artist.Artist.Name
-			}
-			if name == "" {
-				return nil, errors.New("MusicBrainz response has an incomplete artist credit")
-			}
-			credit.WriteString(name)
-			credit.WriteString(artist.JoinPhrase)
+		credit, err := formatArtistCredit(item.ArtistCredit)
+		if err != nil {
+			return nil, err
 		}
-		if item.ID == "" || item.Title == "" || credit.Len() == 0 {
+		if item.ID == "" || item.Title == "" || credit == "" {
 			return nil, errors.New("MusicBrainz response has an incomplete recording")
 		}
 		matches = append(matches, recording{
-			id: item.ID, title: item.Title, artist: credit.String(),
+			id: item.ID, title: item.Title, artist: credit,
 			disambiguation: item.Disambiguation, lengthMS: item.LengthMS,
 		})
 	}
 	return matches, nil
+}
+
+type artistCredit struct {
+	Name       string `json:"name"`
+	JoinPhrase string `json:"joinphrase"`
+	Artist     struct {
+		Name string `json:"name"`
+	} `json:"artist"`
+}
+
+func formatArtistCredit(artists []artistCredit) (string, error) {
+	var credit strings.Builder
+	for _, artist := range artists {
+		name := artist.Name
+		if name == "" {
+			name = artist.Artist.Name
+		}
+		if name == "" {
+			return "", errors.New("MusicBrainz response has an incomplete artist credit")
+		}
+		credit.WriteString(name)
+		credit.WriteString(artist.JoinPhrase)
+	}
+	return credit.String(), nil
 }
