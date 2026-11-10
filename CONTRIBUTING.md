@@ -35,13 +35,13 @@ These project rules apply to both human contributors and coding agents. Agent-sp
 For Go code changes, format changed files and run:
 
 ```sh
-gofmt -w *.go
+gofmt -w main.go internal
 go test ./...
 go vet ./...
 go build -o bin/l1ner .
 ```
 
-Tests are organized by behavior: `inspect_test.go` uses generated MP3 tag fixtures to exercise reading, validation, and file integrity; `output_test.go` supplies in-memory metadata to check terminal rendering and writer failures directly. `batch_test.go` exercises directory traversal, filtering, recursion, summaries, failure continuation, and file integrity using temporary directories. `json_test.go` checks the public JSON format, single/batch results, partial failures, data fidelity, and write errors. No suite requires `music/`.
+CLI tests live in `internal/cli`. `inspect_test.go` uses generated MP3 tag fixtures to exercise reading, validation, and file integrity. `output_test.go` checks terminal rendering and writer failures with in-memory metadata. `batch_test.go` exercises directory traversal, filtering, recursion, summaries, failure continuation, and file integrity using temporary directories. `json_test.go` checks the public JSON format, single/batch results, partial failures, data fidelity, and write errors. The tests use generated fixtures.
 
 `lookup_test.go` uses generated tags to check extraction, CLI behavior, and file integrity. `musicbrainz_test.go` uses a local HTTP server to check request encoding, the rate limit, and provider responses. The [live sample checks](docs/sample-validation.md#musicbrainz-lookup) are manual.
 

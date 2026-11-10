@@ -63,12 +63,19 @@ Fingerprinting and release selection are future milestones.
 2. [x] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
 3. [x] Verified all six outcomes with generated MP3s, a local server, and terminal input. Documented [folder usage](README.md#fix-a-folder) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document batch review and outcomes`.
 
+## Milestone — Identify a song from audio
+
+**Branch** `milestone/audio-identification`. `l1ner identify <file.mp3>` fingerprints one MP3 locally, looks up the fingerprint and duration with AcoustID, and displays MusicBrainz recording candidates for review. The file stays read-only.
+
+1. [x] Move the existing CLI and tests into `internal/cli` and keep the root entry point. Commit as `refactor(cli): move command workflows into internal`.
+2. [ ] Add the local Chromaprint adapter and AcoustID client, with deterministic tests for ambiguous and missing results. Commit as `feat(identify): look up recordings from audio fingerprints`.
+3. [ ] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. Document the application key and open a PR. Commit as `feat(cli): add single-song audio identification`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
 - [ ] Evaluate recording retrieval across a broader sample and research additional metadata services using `docs/open-questions.md`.
 - [ ] Agree on recursive fixing, revisiting decisions, and resuming reviews.
 - [ ] Consider packaging and other operating systems when local Linux usage is established.
-- [ ] Revisit `cmd/l1ner/` and `internal/` packages when additional commands or responsibilities justify them. Keep the current layout for the single-command MVP.
 
 See the [product vision](docs/vision.md), [open questions](docs/open-questions.md), and [technical plan](docs/technical-plan.md) for context. This checklist tracks work; the question tracker records decisions and their rationale.
