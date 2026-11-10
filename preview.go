@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,7 +35,7 @@ type songReview struct {
 	proposal songProposal
 }
 
-func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
+func runSongReview(command string, args []string, in io.Reader, out, errOut io.Writer, search recordingSearch) int {
 	syntax := previewSyntax
 	help := "Search MusicBrainz with the MP3's embedded title and artist and review a proposed change."
 	canceled := "Preview canceled."
@@ -80,12 +81,12 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 	return 0
 }
 
-func previewFile(path string, out io.Writer, search func(title, artist string) ([]recording, error), choose menuSelector) error {
+func previewFile(path string, out io.Writer, search recordingSearch, choose menuSelector) error {
 	tags, err := readLookupTags(path)
 	if err != nil {
 		return err
 	}
-	review, err := searchAndReview(out, path, tags, search, choose, "Accept proposal (preview only)")
+	review, err := searchAndReview(context.Background(), out, path, tags, search, choose, "Accept proposal (preview only)")
 	if err != nil {
 		return err
 	}
@@ -100,9 +101,9 @@ func previewFile(path string, out io.Writer, search func(title, artist string) (
 	return err
 }
 
-func searchAndReview(out io.Writer, path string, tags songTags, search func(title, artist string) ([]recording, error), choose menuSelector, applyLabel string) (songReview, error) {
+func searchAndReview(ctx context.Context, out io.Writer, path string, tags songTags, search recordingSearch, choose menuSelector, applyLabel string) (songReview, error) {
 	title, artist := tags.searchTerms()
-	matches, err := search(title, artist)
+	matches, err := search(ctx, title, artist)
 	if err != nil {
 		return songReview{}, err
 	}

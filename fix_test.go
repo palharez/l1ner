@@ -90,7 +90,7 @@ func TestFixTerminalApproval(t *testing.T) {
 func TestFixRequiresTerminal(t *testing.T) {
 	path, _ := saveFixFixture(t)
 	var out, errOut bytes.Buffer
-	code := runCommand([]string{"fix", path}, strings.NewReader("\n"), &out, &errOut, func(_, _ string) ([]recording, error) {
+	code := runCommand([]string{"fix", path}, strings.NewReader("\n"), &out, &errOut, func(_ context.Context, _, _ string) ([]recording, error) {
 		t.Fatal("fix attempted a lookup without a terminal")
 		return nil, nil
 	})

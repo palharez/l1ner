@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 
 const lookupSyntax = "l1ner lookup <file.mp3>"
 
-func runLookup(args []string, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
+func runLookup(args []string, out, errOut io.Writer, search recordingSearch) int {
 	path, err := parseSongPath("lookup", args)
 	if errors.Is(err, flag.ErrHelp) {
 		fmt.Fprintln(out, "Usage: "+lookupSyntax)
@@ -43,13 +44,13 @@ func parseSongPath(command string, args []string) (string, error) {
 	return flags.Arg(0), nil
 }
 
-func lookupFile(path string, out io.Writer, search func(title, artist string) ([]recording, error)) error {
+func lookupFile(path string, out io.Writer, search recordingSearch) error {
 	tags, err := readLookupTags(path)
 	if err != nil {
 		return err
 	}
 	title, artist := tags.searchTerms()
-	matches, err := search(title, artist)
+	matches, err := search(context.Background(), title, artist)
 	if err != nil {
 		return err
 	}

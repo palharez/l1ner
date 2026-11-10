@@ -55,6 +55,14 @@ Batch lookup, fingerprinting, and release selection are future milestones.
 3. [x] **Connect the wizard to the writer.** Make Apply an explicit choice with Skip highlighted, and test approval, skip, quit, cancellation, and the applied result through the terminal command. Commit as `feat(fix): apply approved single-song changes`.
 4. [x] **Verify and document the milestone.** The [live terminal check](docs/sample-validation.md#single-song-fix) verified the applied tags, unchanged audio and other frames, and exact restoration. See [usage and recovery](README.md#fix-one-song) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document single-song edits and recovery`.
 
+## Milestone — Batch song fixes
+
+**Branch** `milestone/batch-fix`. `l1ner fix <directory>` reviews the immediate MP3s in lexical order. Each Apply approves only the displayed song. Quit leaves the current and remaining songs pending.
+
+1. [x] Pace the MusicBrainz requests with a cancellable wait and keep the existing shared rate limit. Commit as `feat(fix): pace MusicBrainz searches during batch review`.
+2. [ ] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
+3. [ ] Verify the batch with generated MP3s, a local server, and terminal input. Document usage and open a PR for review. Commit as `docs(fix): document batch review and outcomes`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.

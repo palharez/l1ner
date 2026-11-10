@@ -23,7 +23,7 @@ func run(args []string, out, errOut io.Writer) int {
 	return runCommand(args, os.Stdin, out, errOut, searchMusicBrainz)
 }
 
-func runCommand(args []string, in io.Reader, out, errOut io.Writer, search func(title, artist string) ([]recording, error)) int {
+func runCommand(args []string, in io.Reader, out, errOut io.Writer, search recordingSearch) int {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
 		fmt.Fprintln(out, commandUsage)
 		return 0

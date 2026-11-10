@@ -11,13 +11,13 @@ import (
 
 const fixSyntax = "l1ner fix <file.mp3>"
 
-func fixFile(path string, out io.Writer, search func(title, artist string) ([]recording, error), choose menuSelector) error {
+func fixFile(path string, out io.Writer, search recordingSearch, choose menuSelector) error {
 	target, err := openFixTarget(path)
 	if err != nil {
 		return err
 	}
 	defer target.close()
-	review, err := searchAndReview(out, path, target.tags, search, choose, "Apply changes to this MP3")
+	review, err := searchAndReview(context.Background(), out, path, target.tags, search, choose, "Apply changes to this MP3")
 	if err != nil {
 		return err
 	}

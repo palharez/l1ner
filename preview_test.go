@@ -207,7 +207,7 @@ func TestPreviewOutcomes(t *testing.T) {
 func TestPreviewRequiresTerminal(t *testing.T) {
 	path := save(t, fixture(4, frame(4, "TIT2", []byte("\x03Song")), frame(4, "TPE1", []byte("\x03Artist"))))
 	var out, errOut bytes.Buffer
-	code := runCommand([]string{"preview", path}, strings.NewReader("\n"), &out, &errOut, func(_, _ string) ([]recording, error) {
+	code := runCommand([]string{"preview", path}, strings.NewReader("\n"), &out, &errOut, func(_ context.Context, _, _ string) ([]recording, error) {
 		t.Fatal("preview attempted a lookup without a terminal")
 		return nil, nil
 	})
