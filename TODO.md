@@ -1,6 +1,6 @@
 # Next steps
 
-The implemented CLI inspects local MP3 files and directories on Linux, read-only and offline. The original MVP covered one file; directory inspection is its first extension. Work through the immediate tasks in order; check items off when completed.
+The CLI inspects local MP3 files and directories on Linux, searches by tags or audio fingerprint, and applies approved title and artist edits. Work through the immediate tasks in order and check items off when completed.
 
 ## Improve the current MVP
 
@@ -34,7 +34,7 @@ The implemented CLI inspects local MP3 files and directories on Linux, read-only
 3. [x] **Wire up `lookup`.** Accept one MP3 path and show candidates in service order. Preserve separate recordings even when they share a title and credit. Escape control characters in terminal output. Use exit `0` for a completed search including zero results, `1` for input, service, or output failures, and `2` for invalid arguments. Test the command with a local server, including zero requests on invalid tags and identical file checksums before and after lookup. Keep existing `inspect` tests passing. Commit as `feat(lookup): add single-file lookup command`.
 4. [x] **Verify and document the milestone.** Run `gofmt -w *.go`, `go test ./...`, `go vet ./...`, and `go build -o bin/l1ner .`. The original reference lookup missed its expected version. “My Home Town” returned the expected recording, and all checked input SHA-256 hashes matched before and after. See [usage](README.md#musicbrainz-lookup) and the [live validation results](docs/sample-validation.md#musicbrainz-lookup). Commit as `docs(lookup): document usage and live validation`.
 
-Fingerprinting and release selection are future milestones.
+See the audio identification milestone for fingerprint-based lookup. Exact release selection remains open.
 
 ## Milestone — Interactive song preview
 
@@ -63,12 +63,20 @@ Fingerprinting and release selection are future milestones.
 2. [x] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
 3. [x] Verified all six outcomes with generated MP3s, a local server, and terminal input. Documented [folder usage](README.md#fix-a-folder) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document batch review and outcomes`.
 
+## Milestone — Identify a song from audio
+
+**Branch** `milestone/audio-identification`. `l1ner identify <file.mp3>` fingerprints one MP3 locally, looks up the fingerprint and duration with AcoustID, and displays MusicBrainz recording candidates for review. The file stays read-only.
+
+1. [x] Move the existing CLI and tests into `internal/cli` and keep the root entry point. Commit as `refactor(cli): move command workflows into internal`.
+2. [x] Add the local Chromaprint adapter and AcoustID client, with deterministic tests for ambiguous and missing results. Commit as `feat(identify): look up recordings from audio fingerprints`.
+3. [x] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. See the [setup](README.md#identify-a-song-from-audio) and [live check](docs/sample-validation.md#audio-identification). Follow the [PR workflow](CONTRIBUTING.md#feature-workflow).
+4. [x] Mark audio identification as optional in help and document how to register an AcoustID application and use its key. Verify the standard commands work without AcoustID setup. Commit as `docs(identify): explain optional AcoustID setup`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
 - [ ] Evaluate recording retrieval across a broader sample and research additional metadata services using `docs/open-questions.md`.
 - [ ] Agree on recursive fixing, revisiting decisions, and resuming reviews.
 - [ ] Consider packaging and other operating systems when local Linux usage is established.
-- [ ] Revisit `cmd/l1ner/` and `internal/` packages when additional commands or responsibilities justify them. Keep the current layout for the single-command MVP.
 
 See the [product vision](docs/vision.md), [open questions](docs/open-questions.md), and [technical plan](docs/technical-plan.md) for context. This checklist tracks work; the question tracker records decisions and their rationale.

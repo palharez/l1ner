@@ -150,7 +150,9 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 - [ ] Which libraries should handle metadata reading and writing beyond the first MVP?
 
   **Partial decision:** First-MVP reading uses `github.com/bogem/id3v2/v2`. Writing and broader format coverage remain open.
-- [ ] Which audio fingerprinting technologies are suitable?
+- [x] Which fingerprinting technology should the first audio lookup use?
+
+  **Decision.** Use Chromaprint through its `fpcalc` executable on Linux. See the [AcoustID decision](#first-audio-lookup--acoustid).
 - [ ] How should the CLI be packaged and distributed across operating systems?
 
 ## External Services
@@ -166,6 +168,16 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
   **Decision:** Use MusicBrainz public recording search. The hosted API permits free non-commercial use and requires a meaningful `User-Agent` and a maximum of one request per second. Public search requires no API key. [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API) · [Rate limiting](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting)
 
   **Implementation:** Lookup sends one request per invocation with a 10-second timeout. A per-user cache marker coordinates the rate limit across local invocations. The marker stores request timing through its modification time.
+
+### First audio lookup — AcoustID
+
+- [x] Agree on the provider and what data may leave the machine.
+
+  **Decision.** Audio identification is opt-in. Only an explicit `identify` invocation sends a locally calculated audio fingerprint and the MP3 duration to AcoustID, authenticated with an application key from `L1NER_ACOUSTID_KEY`. The original audio, path, and embedded tags stay local. All other commands work without AcoustID setup. [Setup guide](audio-identification.md)
+
+- [x] Agree on the first presentation of fingerprint matches.
+
+  **Decision.** Show each distinct linked MusicBrainz recording for review, ordered by AcoustID score. The score ranks fingerprint hits. Selection for tag proposals and confidence rules remain open. See the [live validation](sample-validation.md#audio-identification).
 
 ### Broader provider questions
 

@@ -200,7 +200,7 @@ An optional `--json` flag emits one machine-readable report for file or director
 
 ### Implemented Extension — MusicBrainz Lookup
 
-Users can explicitly search MusicBrainz for one MP3 using its embedded title and artist. l1ner shows recording candidates for human review. Exact release selection and fingerprinting are future work. See the [lookup usage](../README.md#musicbrainz-lookup).
+Users can explicitly search MusicBrainz for one MP3 using its embedded title and artist. l1ner shows recording candidates for human review. See the [lookup usage](../README.md#musicbrainz-lookup).
 
 ### Implemented Extension — Single-Song Review and Fix
 
@@ -209,6 +209,10 @@ The terminal wizard lets the listener choose a recording and review the proposed
 ### Implemented Extension — Folder Fixes
 
 `fix` also reviews the immediate MP3s in a folder one at a time. Each approval applies only to the displayed song. The listener can skip files or quit with the remaining songs pending. See the [folder workflow](../README.md#fix-a-folder).
+
+### Implemented Extension — Audio Identification
+
+Listeners can look up one MP3 by sound, including files with missing or incorrect tags. l1ner generates a fingerprint locally and sends it with the duration to AcoustID. The command lists linked recording candidates for review and leaves the file intact. See the [identification workflow](../README.md#identify-a-song-from-audio).
 
 ## 8. Success Criteria
 

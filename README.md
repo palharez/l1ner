@@ -4,7 +4,7 @@
 
 l1ner is an open-source CLI for inspecting local music files, with a longer-term vision of identifying tracks, enriching metadata, and helping users organize portable music collections.
 
-**Status:** Inspect MP3s offline, search MusicBrainz, and review or apply title and artist changes one song at a time in the terminal.
+**Status.** Inspect MP3s offline, search by embedded tags, and review or apply title and artist changes one song at a time in the terminal. Audio identification is optional.
 
 ## First MVP
 
@@ -99,6 +99,16 @@ The command displays up to five recording candidates in MusicBrainz order, inclu
 
 A completed search exits `0`, including when it returns zero candidates. Input, service, and output errors exit `1`. Invalid arguments exit `2`. The request times out after 10 seconds. Concurrent lookups that reach the local limit report an error. l1ner uses a one-byte rate marker at `$XDG_CACHE_HOME/l1ner/musicbrainz-rate`, defaulting to `$HOME/.cache/l1ner/musicbrainz-rate`, to coordinate the [MusicBrainz rate limit](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting) across invocations. Search terms and results are held in memory, and the MP3 is opened read-only.
 
+### Identify a song from audio
+
+`identify` is an opt-in way to find a recording by sound when its tags are missing or wrong. Only this command needs Chromaprint's `fpcalc` and an AcoustID application key. Use the [audio identification guide](docs/audio-identification.md) to install `fpcalc`, create the right key, and set `L1NER_ACOUSTID_KEY` in your shell.
+
+```sh
+./bin/l1ner identify music/song.mp3
+```
+
+AcoustID receives the fingerprint and duration. The MP3, path, and tags stay local. The command shows recording candidates for review and leaves the file untouched.
+
 ### Interactive song preview
 
 ```sh
@@ -181,6 +191,7 @@ The documented local validation collection contains 20 MP3 samples from one arti
 - [Product vision](docs/vision.md): concept, principles, MVP scope, and success criteria.
 - [Open questions](docs/open-questions.md): agreed decisions and questions for later phases.
 - [JSON output](docs/json-output.md): report format, examples, and error handling.
+- [Audio identification](docs/audio-identification.md) explains AcoustID, application key setup, and troubleshooting.
 - [Technical plan](docs/technical-plan.md): library selection, read-only workflow, and validation approach.
 - [Sample validation](docs/sample-validation.md): local observations, provenance, and coverage limits.
 

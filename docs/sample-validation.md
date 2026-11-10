@@ -45,6 +45,12 @@ The built CLI ran in a Linux pseudo-terminal on a disposable copy of “My Home 
 
 The built CLI ran in a Linux pseudo-terminal on four disposable copies of “My Home Town” with lowercase title tags. The live review applied the first proposal, skipped the second, and quit on the third. The summary reported one applied, one skipped, and two pending. The applied file retained its audio bytes and had a byte-for-byte backup. The other copies and the reference MP3 in `music/` stayed unchanged, and the terminal mode was restored.
 
+## Audio identification
+
+On 2026-11-10, the built CLI ran `identify` on two read-only copies of “My Home Town” using Chromaprint 1.6.2 and AcoustID's documented initial-testing key. One copy had no tags. The other had a generated ID3v2.3 tag with deliberately incorrect title and artist values. Both returned the [expected live recording from *Revisited*](https://musicbrainz.org/recording/232265e2-7983-461a-918a-be86d0b87a9c) with an AcoustID score of `0.9769` and exit status `0`.
+
+Both copies and the reference MP3 kept their SHA-256 checksums. The live run covers one recording. A deterministic test with a local HTTP server checks that distinct recording IDs are retained when a response is ambiguous.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

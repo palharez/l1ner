@@ -53,28 +53,19 @@ Checked on 2026-11-09:
 
 The selected library's upstream `go test ./...` passed with network access disabled after dependency setup. Tests were run from a writable temporary copy because the upstream tests modify their own fixtures and cannot run directly in Go's read-only module cache. That check verified the dependency/toolchain combination. The project tests and CLI validation are recorded below.
 
-## Minimal CLI Structure
+## CLI Structure
 
-Use Go's standard library for argument handling and terminal output; no CLI framework is needed for this single-command MVP.
+Use Go's standard library for argument handling and output. Keep the root entry point for `go run .` and `go build -o bin/l1ner .`.
 
-Implemented files:
-
-| File | Responsibility |
+| Path | Responsibility |
 | --- | --- |
+| `main.go` | Pass command-line arguments and terminal streams to the CLI and return its exit status. |
+| `internal/cli` | Command dispatch, inspection, rendering, MusicBrainz search, interactive review, and approved tag writes. Tests stay beside the workflows they exercise. |
+| `internal/identify` | Local audio fingerprinting, AcoustID requests, and recording candidate normalization. |
+| `internal/ratelimit` | Shared Linux file locking and request timing for the two services. |
 | `go.mod`, `go.sum` | Module definition and pinned dependencies. |
-| `main.go` | Entry point, argument parsing, file/directory dispatch, help, and exit status. |
-| `batch.go` | Directory traversal, sequential batch inspection, per-path errors, and summary counts. |
-| `batch_test.go` | Generated directory fixtures, recursion, filtering, symlink handling, continuation, output errors, and integrity checks. |
-| `inspect.go` | Read-only file access, tag detection, and tag-header validation. |
-| `frames.go` | Frame-header validation, iteration, and library decoding adapter. |
-| `json.go`, `json_test.go` | JSON report types, collection, serialization, and behavior tests. |
-| `output.go` | Stable ordering and readable text/binary frame presentation. |
-| `inspect_test.go` | Generated MP3 fixtures for parsing, boundary checks, errors, and file integrity. |
-| `output_test.go` | Direct rendering tests for ordering, Unicode, escaping, summaries, and writer failures. |
 
-Follow the Google Go style conventions documented in [CONTRIBUTING.md](../CONTRIBUTING.md). File access, tag validation, frame validation, and decoding are separate operations; coordinating functions remain focused.
-
-Keep these in one package initially. Additional package layers are unnecessary for the agreed scope.
+Within `internal/cli`, `inspect.go` handles read-only file access and tag headers, `frames.go` handles frame validation and decoding, `batch.go` handles discovery and per-file results, and `output.go` and `json.go` handle presentation. Follow the [Go style conventions](../CONTRIBUTING.md#go-style).
 
 Local invocation from the repository root:
 
@@ -91,7 +82,7 @@ Output behavior:
 
 ## Implementation Coverage and Validation
 
-The CLI uses read-only file access and never calls metadata write APIs. Tag bodies are limited to 64 MiB. Tag-level flags and frame format flags are rejected explicitly because the selected reader does not reliably handle all transformations. CHAP/CTOC frames are summarized as unparsed data rather than passed to the limited nested-frame parser. Unknown frames are summarized; ordinary URL frames are displayed as text. A supported ID3v2 tag takes precedence over a coexisting ID3v1 tag.
+`inspect` uses read-only file access. Tag bodies are limited to 64 MiB. Tag-level flags and frame format flags are rejected explicitly because the selected reader does not reliably handle all transformations. CHAP/CTOC frames are summarized as unparsed data rather than passed to the limited nested-frame parser. Unknown frames are summarized; ordinary URL frames are displayed as text. A supported ID3v2 tag takes precedence over a coexisting ID3v1 tag.
 
 The CLI checks the MP3 extension and recognizes ID3 or MPEG headers; it does not validate the entire audio stream.
 
@@ -127,6 +118,12 @@ Generated tests cover single files, shallow/recursive directories, mixed success
 `lookup.go` reuses the inspector to extract one unambiguous title and artist, then renders the recording candidates as escaped terminal text. `musicbrainz.go` makes one bounded HTTPS request with Go's standard HTTP and JSON libraries. It keeps candidates in service order and caps the list at five. A Linux file lock and the marker's modification time coordinate the request limit across invocations that use the same user cache.
 
 Tests exercise the command with generated MP3s and a local HTTP server. The [sample-validation notes](sample-validation.md#musicbrainz-lookup) record the live catalog results and limits.
+
+## Audio identification
+
+`identify` validates one regular MP3 and invokes `fpcalc` with the MP3 demuxer, JSON output, and an absolute path. The process has a 30-second timeout and bounded output. The CLI keeps the fingerprint and results in memory and posts the fingerprint and whole-file duration to AcoustID with `meta=recordings`. The HTTPS request has a 10-second timeout and declines redirects. The two services use independent rate markers.
+
+The CLI displays distinct MusicBrainz recording IDs in descending AcoustID score order. Repeated IDs keep the highest score. The command ends after showing candidates for human review. Interactive preview and fixes still use the title and artist search. See the [provider decision](open-questions.md#first-audio-lookup--acoustid) and [live validation](sample-validation.md#audio-identification).
 
 ## Single-song fix
 
