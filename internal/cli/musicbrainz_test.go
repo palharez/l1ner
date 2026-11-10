@@ -13,6 +13,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/palharez/l1ner/internal/ratelimit"
 )
 
 func TestBatchSearchPacesRequestsAndCancelsWait(t *testing.T) {
@@ -159,17 +161,11 @@ func TestMusicBrainzRateLimit(t *testing.T) {
 		requests.Add(1)
 		io.WriteString(w, `{"recordings":[]}`)
 	})
-	if err := os.MkdirAll(filepath.Dir(client.rateFile), 0o700); err != nil {
-		t.Fatal(err)
-	}
-	file, err := os.Create(client.rateFile)
+	file, err := ratelimit.Acquire(client.rateFile, "MusicBrainz", musicBrainzInterval)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { file.Close() })
-	if err := reserveMusicBrainzRequest(file); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := client.search(t.Context(), "Title", "Artist"); err == nil || !strings.Contains(err.Error(), "rate limited locally") {
 		t.Errorf("search with held lock = %v, want local rate limit error", err)
 	}

@@ -68,7 +68,7 @@ Fingerprinting and release selection are future milestones.
 **Branch** `milestone/audio-identification`. `l1ner identify <file.mp3>` fingerprints one MP3 locally, looks up the fingerprint and duration with AcoustID, and displays MusicBrainz recording candidates for review. The file stays read-only.
 
 1. [x] Move the existing CLI and tests into `internal/cli` and keep the root entry point. Commit as `refactor(cli): move command workflows into internal`.
-2. [ ] Add the local Chromaprint adapter and AcoustID client, with deterministic tests for ambiguous and missing results. Commit as `feat(identify): look up recordings from audio fingerprints`.
+2. [x] Add the local Chromaprint adapter and AcoustID client, with deterministic tests for ambiguous and missing results. Commit as `feat(identify): look up recordings from audio fingerprints`.
 3. [ ] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. Document the application key and open a PR. Commit as `feat(cli): add single-song audio identification`.
 
 ## Future directions — not committed scope

@@ -11,8 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
+
+	"github.com/palharez/l1ner/internal/ratelimit"
 )
 
 const (
@@ -61,17 +62,14 @@ func (c musicBrainzClient) search(ctx context.Context, title, artist string) ([]
 	if err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(filepath.Dir(c.rateFile), 0o700); err != nil {
-		return nil, fmt.Errorf("create MusicBrainz rate limit directory: %w", err)
+	rateFile, err := ratelimit.Acquire(c.rateFile, "MusicBrainz", musicBrainzInterval)
+	if errors.Is(err, ratelimit.ErrBusy) {
+		return nil, errMusicBrainzCooldown
 	}
-	rateFile, err := os.OpenFile(c.rateFile, os.O_RDWR|os.O_CREATE|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("open MusicBrainz rate limit file: %w", err)
-	}
-	defer rateFile.Close()
-	if err := reserveMusicBrainzRequest(rateFile); err != nil {
 		return nil, err
 	}
+	defer rateFile.Close()
 	return requestRecordings(request, c.timeout)
 }
 
@@ -121,31 +119,6 @@ func requestRecordings(request *http.Request, timeout time.Duration) ([]recordin
 		return nil, fmt.Errorf("MusicBrainz returned HTTP %d", response.StatusCode)
 	}
 	return decodeRecordings(response.Body)
-}
-
-func reserveMusicBrainzRequest(file *os.File) error {
-	// Hold the shared lock until the request ends, including across invocations.
-	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		if errors.Is(err, syscall.EWOULDBLOCK) {
-			return errMusicBrainzCooldown
-		}
-		return fmt.Errorf("lock MusicBrainz rate limit file: %w", err)
-	}
-	info, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("stat MusicBrainz rate limit file: %w", err)
-	}
-	if !info.Mode().IsRegular() {
-		return errors.New("MusicBrainz rate limit file is not a regular file")
-	}
-	if info.Size() != 0 && time.Since(info.ModTime()) < musicBrainzInterval {
-		return errMusicBrainzCooldown
-	}
-	// The single byte distinguishes a new file. Its modification time records the last request.
-	if _, err := file.WriteAt([]byte{1}, 0); err != nil {
-		return fmt.Errorf("update MusicBrainz rate limit file: %w", err)
-	}
-	return nil
 }
 
 // paceBatchSearch is used sequentially by one batch. Leave a full interval
