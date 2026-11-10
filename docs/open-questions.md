@@ -57,7 +57,7 @@ Use the checklist to track progress. When a question is resolved, record the dec
 
   **Decision:** Verify that the CLI displays existing tags in the reference MP3, leaves the input file unchanged, displays `No metadata found` for a file without tags, and reports a clear error for missing or unreadable files. Expected values must come from the embedded metadata, not just the source page. Generated fixtures cover output, parsing errors, and file integrity; checks compare file size, permissions, and whole-file SHA-256. Tests, vet, and build checks run in CI; see [CONTRIBUTING.md](../CONTRIBUTING.md#verification).
 
-The original single-file decisions remain recorded above. Directory inspection is the implemented extension below; identification, enrichment, and writing remain future work.
+The original single-file inspection decisions remain recorded above. Directory inspection, MusicBrainz lookup, and single-song editing each have a separate scope.
 
 ## Directory Inspection — Agreed Extension
 
@@ -81,7 +81,7 @@ The extension remains local, Linux-only, offline, and read-only. Directory defau
 
 - [x] Should proposed fixes require acceptance per song?
 
-  **Future requirement:** Present proposed changes for each song and require the user's acceptance before modifying that file. This is a product requirement, not an implemented feature or authorization to write files now.
+  **Decision:** Present proposed changes for each song and require the user's acceptance before modifying that file. The single-song `fix` command implements this requirement. Batch approval is a future milestone.
 
 - [ ] How should per-song review show existing and proposed values, support skipping/rejection, and navigate a batch?
 
@@ -182,6 +182,8 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 ## Data Integrity
 
+**Single-song decision.** `fix` stages a replacement in the same directory, verifies the proposed tags and unchanged audio, and publishes an exact `.l1ner.bak` backup before replacing the source. It refuses existing backups and changes detected during review. Restore by moving the backup over the MP3. See the [write and recovery details](technical-plan.md#single-song-fix).
+
 - [ ] What backup and recovery strategies should be supported?
 - [ ] How can metadata modifications be made safely?
 - [ ] How should interrupted batch operations be handled?
@@ -195,7 +197,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, and `l1ner preview <file.mp3>`. Flags precede the path.
+  **Implemented:** `l1ner inspect [--recursive] [--json] <file-or-directory>`, `l1ner lookup <file.mp3>`, `l1ner preview <file.mp3>`, and `l1ner fix <file.mp3>`. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

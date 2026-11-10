@@ -128,4 +128,12 @@ Generated tests cover single files, shallow/recursive directories, mixed success
 
 Tests exercise the command with generated MP3s and a local HTTP server. The [sample-validation notes](sample-validation.md#musicbrainz-lookup) record the live catalog results and limits.
 
-Packaging, distribution, metadata writing, and additional tag formats remain deferred.
+## Single-song fix
+
+`fix` shares the interactive review and requires the user to select Apply for the displayed file. It rewrites the approved `TIT2` and `TPE1` frames individually and copies every unrelated frame byte for byte in its original order. Repeated frames keep their positions. ID3v2.3 uses Latin-1 or BOM-marked UCS-2, and ID3v2.4 uses UTF-8. The writer rejects protected or flagged frames, signatures, unrepresentable text, and tag growth when `CHAP`, `ASPI`, or `RBUF` may depend on file offsets. Existing padding is reused to preserve offsets where possible. [ID3v2.3](https://id3.org/id3v2.3.0) · [ID3v2.4 structure](https://id3.org/id3v2.4.0-structure) · [ID3 chapters](https://id3.org/id3v2-chapters-1.0)
+
+The writer uses an advisory lock and rechecks the path and SHA-256 before replacement. It copies the reviewed file into a backup stage and verifies that copy. The replacement stage is checked against the proposal and the audio and trailing bytes from the backup. The original owner, group, and permission bits are preserved. Files with extended attributes, special mode bits, or multiple hard links are refused so those properties cannot be lost during replacement.
+
+The backup is published under an exclusive `.l1ner.bak` name and synced before the verified stage is renamed over the MP3. A failure before rename preserves the original file. If the backup was already published, it remains available for recovery. A directory sync failure after rename is reported as a warning that the replacement was applied. Abrupt termination can leave `.l1ner-stage-*` files beside the MP3. Use the reported backup path for recovery. See the [recovery command](../README.md#fix-one-song).
+
+Packaging, distribution, directory edits, and additional tag formats remain deferred.

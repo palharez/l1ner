@@ -34,7 +34,7 @@ The implemented CLI inspects local MP3 files and directories on Linux, read-only
 3. [x] **Wire up `lookup`.** Accept one MP3 path and show candidates in service order. Preserve separate recordings even when they share a title and credit. Escape control characters in terminal output. Use exit `0` for a completed search including zero results, `1` for input, service, or output failures, and `2` for invalid arguments. Test the command with a local server, including zero requests on invalid tags and identical file checksums before and after lookup. Keep existing `inspect` tests passing. Commit as `feat(lookup): add single-file lookup command`.
 4. [x] **Verify and document the milestone.** Run `gofmt -w *.go`, `go test ./...`, `go vet ./...`, and `go build -o bin/l1ner .`. The original reference lookup missed its expected version. “My Home Town” returned the expected recording, and all checked input SHA-256 hashes matched before and after. See [usage](README.md#musicbrainz-lookup) and the [live validation results](docs/sample-validation.md#musicbrainz-lookup). Commit as `docs(lookup): document usage and live validation`.
 
-Batch lookup, fingerprinting, release selection, and metadata writing are future milestones.
+Batch lookup, fingerprinting, and release selection are future milestones.
 
 ## Milestone — Interactive song preview
 
@@ -53,13 +53,13 @@ Batch lookup, fingerprinting, release selection, and metadata writing are future
 1. [x] **Rewrite approved ID3 frames.** Keep the existing tag version and preserve every unrelated frame and the audio. Test ID3v2.3 and ID3v2.4, repeated frames, Unicode, and unsupported features. Commit as `feat(fix): rewrite approved title and artist frames`.
 2. [x] **Stage and verify the replacement.** Work in the source directory, reject unsafe file layouts, check that the reviewed file has stayed the same, verify the staged tags and audio, and publish an exact `.l1ner.bak` backup before replacement. Test restoration, backup collisions, and failures. Commit as `feat(fix): verify and back up song edits`.
 3. [x] **Connect the wizard to the writer.** Make Apply an explicit choice with Skip highlighted, and test approval, skip, quit, cancellation, and the applied result through the terminal command. Commit as `feat(fix): apply approved single-song changes`.
-4. [ ] **Verify and document the milestone.** Run the contributor checks and try the built binary on a disposable fixture. Document usage and recovery, then open a PR for review. Commit as `docs(fix): document single-song edits and recovery`.
+4. [x] **Verify and document the milestone.** The [live terminal check](docs/sample-validation.md#single-song-fix) verified the applied tags, unchanged audio and other frames, and exact restoration. See [usage and recovery](README.md#fix-one-song) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document single-song edits and recovery`.
 
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.
 - [ ] Evaluate recording retrieval across a broader sample and research additional metadata services using `docs/open-questions.md`.
-- [ ] Extend the per-song review to directories. Agree on batch navigation, resuming reviews, and integrity/recovery before adding metadata writing.
+- [ ] Extend per-song review and verified edits to directories. Agree on batch navigation, resuming reviews, and integrity and recovery behavior for interrupted runs.
 - [ ] Consider packaging and other operating systems when local Linux usage is established.
 - [ ] Revisit `cmd/l1ner/` and `internal/` packages when additional commands or responsibilities justify them. Keep the current layout for the single-command MVP.
 
