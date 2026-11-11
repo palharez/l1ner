@@ -69,7 +69,7 @@ func TestMoveReviewedAlbumSong(t *testing.T) {
 			}
 			var blocked albumMoveBlocked
 			if moved || !errors.As(err, &blocked) {
-				t.Errorf("move = %v, %v, want blocked", moved, err)
+				t.Fatalf("move = %v, %v, want blocked", moved, err)
 			}
 			assertFileBytes(t, source, data)
 			if scenario == "occupied" && !strings.Contains(err.Error(), "already exists") {

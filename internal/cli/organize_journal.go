@@ -55,6 +55,9 @@ type albumRecoveryError struct{ error }
 func (err albumRecoveryError) Unwrap() error { return err.error }
 
 func (w *albumWorkspace) createJournal() (*albumJournal, error) {
+	if err := w.verifyRoot(); err != nil {
+		return nil, err
+	}
 	info, err := w.directory.Stat()
 	if err != nil {
 		return nil, err

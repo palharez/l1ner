@@ -8,22 +8,23 @@ import (
 	"path/filepath"
 )
 
-const organizeSyntax = "l1ner organize --dry-run <directory>"
+const organizeSyntax = "l1ner organize --dry-run <directory>\n       l1ner organize --apply <directory>"
 
-func runOrganize(args []string, out, errOut io.Writer) int {
+func runOrganize(args []string, in io.Reader, out, errOut io.Writer) int {
 	flags := flag.NewFlagSet("organize", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	dryRun := flags.Bool("dry-run", false, "preview album folders")
+	apply := flags.Bool("apply", false, "review and move songs into album folders")
 	err := flags.Parse(args)
 	if errors.Is(err, flag.ErrHelp) {
-		if _, err := fmt.Fprintln(out, "Usage: "+organizeSyntax+"\nPreview album folders using embedded MP3 tags."); err != nil {
+		if _, err := fmt.Fprintln(out, "Usage: "+organizeSyntax+"\nPreview album folders or approve moves using embedded MP3 tags."); err != nil {
 			reportError(errOut, err)
 			return 1
 		}
 		return 0
 	}
-	if err == nil && !*dryRun {
-		err = errors.New("--dry-run is required")
+	if err == nil && *dryRun == *apply {
+		err = errors.New("choose one of --dry-run or --apply")
 	}
 	if err == nil && (flags.NArg() != 1 || flags.Arg(0) == "") {
 		err = errors.New("expected one directory path")
@@ -34,6 +35,14 @@ func runOrganize(args []string, out, errOut io.Writer) int {
 		return 2
 	}
 
+	if *apply {
+		choose, ok := terminalMenu(in, out)
+		if !ok {
+			reportError(errOut, errors.New("organize --apply requires a terminal for input and output"))
+			return 1
+		}
+		return runOrganizeApply(flags.Arg(0), out, errOut, choose)
+	}
 	plan, err := planAlbumFolders(flags.Arg(0))
 	if err != nil {
 		reportError(errOut, err)

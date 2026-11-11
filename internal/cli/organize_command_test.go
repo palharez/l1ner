@@ -58,7 +58,9 @@ func TestOrganizeArgumentsAndOutcomes(t *testing.T) {
 		want string
 	}{
 		{"help", []string{"--help"}, 0, "organize --dry-run"},
-		{"missing flag", []string{folder}, 2, "--dry-run is required"},
+		{"missing flag", []string{folder}, 2, "choose one of --dry-run"},
+		{"conflicting modes", []string{"--dry-run", "--apply", folder}, 2, "choose one of --dry-run"},
+		{"apply requires terminal", []string{"--apply", folder}, 1, "requires a terminal"},
 		{"missing path", []string{"--dry-run"}, 2, "expected one directory path"},
 		{"unknown flag", []string{"--recursive", folder}, 2, "flag provided but not defined"},
 		{"file input", []string{"--dry-run", file}, 1, "expected a directory"},

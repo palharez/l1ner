@@ -13,8 +13,6 @@ import (
 	"strings"
 	"syscall"
 	"text/tabwriter"
-
-	"golang.org/x/term"
 )
 
 const previewSyntax = "l1ner preview [--from-audio] [--release] <file.mp3>"
@@ -80,18 +78,10 @@ func runSongReview(command string, args []string, in io.Reader, out, errOut io.W
 		reportError(errOut, errors.New("--from-audio requires one MP3 file"))
 		return 2
 	}
-	input, inputIsFile := in.(*os.File)
-	output, outputIsFile := out.(*os.File)
-	if !inputIsFile || !outputIsFile || !term.IsTerminal(int(input.Fd())) || !term.IsTerminal(int(output.Fd())) {
+	choose, ok := terminalMenu(in, out)
+	if !ok {
 		reportError(errOut, fmt.Errorf("%s requires a terminal for input and output", command))
 		return 1
-	}
-	choose := func(ctx context.Context, question string, options []menuOption, selected int) (int, error) {
-		choice, err := selectTerminalMenu(ctx, input, output, question, options, selected)
-		if err != nil && !errors.Is(err, errPreviewCanceled) {
-			return 0, reviewUIError{err}
-		}
-		return choice, err
 	}
 	if !options.release {
 		searches.releases = nil
