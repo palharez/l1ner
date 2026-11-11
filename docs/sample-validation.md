@@ -69,6 +69,12 @@ The built CLI used `preview --from-audio --release` on a disposable copy of “M
 
 The built CLI then ran `fix --from-audio --release` on two disposable copies. Applying the first proposal and skipping the second produced one applied and one skipped. Inspection verified the approved album, album artist, track number, and disc number. The edited audio and unrelated metadata matched the original, the backup was byte-for-byte exact, and the skipped copy and reference were intact. Both commands restored terminal mode.
 
+## Album folder preview
+
+Two runs of the built `organize --dry-run` command on a temporary mixed folder produced identical output with four planned files and two blockers. Two artists had albums with the same name and received separate folders. Tracks with distinct performers shared a compilation folder through the same album artist tag. The blockers were an existing case-insensitive destination collision and a missing album artist.
+
+The local 20-file sample folder reported 20 blockers because each sample lacked an album artist tag. All paths and file SHA-256 checksums in both folders matched their pre-run snapshots.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

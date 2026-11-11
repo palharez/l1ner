@@ -59,6 +59,8 @@ The audio identification tests use a stub `fpcalc` and a local HTTP server. They
 
 Release tagging tests use a local MusicBrainz server and generated MP3s. They cover edition-specific track positions, choosing another release, read-only preview, and the same approved write and backup through single-file and folder fixes.
 
+Album organization tests use generated tags and temporary folders. They cover compilation grouping, unsafe paths, collisions, deterministic output, and preservation of paths and file contents during preview.
+
 To focus on output behavior while developing:
 
 ```sh

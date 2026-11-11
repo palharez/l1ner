@@ -96,6 +96,22 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 2. [x] Reuse the release picker and verified writer for preview, single-file fix, and batch fix. Check per-song approval, exact backups, and unchanged unrelated data. Commit as `feat(fix): review and apply release tags`.
 3. [x] Verify the CLI and document the workflow. Commit as `docs(fix): document album and track tagging`.
 
+## Milestone — Preview album folders
+
+**Branch** `milestone/album-organization-preview`. `l1ner organize --dry-run <directory>` shows where the immediate MP3s would go under the selected folder. For example, `music/song.mp3` would go to `music/Tom Lehrer/Revisited/song.mp3`. See the [album layout proposal](docs/open-questions.md#album-organization).
+
+1. [x] Build the plan from the existing directory scan and ID3 reader. Use album artist and album for the folder names and the source basename for the filename. Report missing or conflicting tags, unsafe path components, and occupied or conflicting destinations. Commit as `feat(organize): plan album folders from MP3 tags`.
+2. [x] Expose the read-only plan in the CLI. Show each source and destination or the reason it needs attention. Verify stable output, separate folders for two artists with albums of the same name, compilation grouping, and collisions. Compare paths and checksums before and after preview. Commit as `feat(organize): preview album folder changes`.
+3. [x] Run the contributor checks, document the command, and open the preview PR for review. Commit as `docs(organize): document the album layout preview`.
+
+## Milestone — Apply and undo album organization
+
+**Proposed branch** `milestone/album-organization-apply`, based on the merged preview milestone. `l1ner organize --apply <directory>` uses the same plan and reviews each move before changing the selected folder. `l1ner organize --undo <journal>` restores original paths from that run.
+
+1. [ ] Implement a root-relative move that fails when the destination exists. Recheck the source and destination after approval, create destination folders as needed, and use a same-filesystem move. Record recoverable move information before changing a path. Commit as `feat(organize): move songs safely and record recovery information`.
+2. [ ] Reuse the terminal review for Apply, Skip, and Quit. Display the journal path and a summary of moved, skipped, blocked, failed, and pending songs. Verify that a destination created after review blocks the move and that Quit preserves completed approvals. Commit as `feat(organize): review and apply each album move`.
+3. [ ] Implement undo for completed moves and reconcile a run interrupted during a move. Verify restored paths and exact checksums, occupied restore paths, existing tag backups, and retry after a partial undo. Run the contributor checks, document apply and undo, and open the milestone PR. Commit as `feat(organize): undo an album organization run`.
+
 ## Future directions — not committed scope
 
 - [ ] Revisit older tag versions and currently unsupported ID3 features.

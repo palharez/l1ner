@@ -204,6 +204,22 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 - [ ] How should the tool proceed when a recording is identifiable but its exact release or artwork is uncertain?
 - [ ] When should the system request manual confirmation?
 
+## Album Organization
+
+- [x] Which folder and tags define an album group?
+
+  **Layout.** Use the selected directory as both the source and destination root. Review the regular MP3s directly inside it in lexical order. Plan each eligible file at `<album artist>/<album>/<original filename>` relative to that root. Read the album artist from `TPE2` and the album from `TALB`. This puts compilation tracks with the same album artist and album together. Missing or conflicting values need attention. The layout groups by those two tags, so editions with the same credited album artist and album name share a folder.
+
+- [x] How should a preview handle unsafe paths and collisions?
+
+  **Implemented.** Reuse the offline ID3 reader and the existing directory discovery rules. Validate each proposed folder name as a single path component. Report invalid names, symlinks in destination paths, occupied destinations, and names that collide after Unicode case folding. Show the source path and the reason for each blocked item. The preview reads the filesystem and prints its plan to the terminal. [Usage](../README.md#preview-album-folders)
+
+- [ ] What should approval and undo cover?
+
+  **Proposed behavior.** Show the exact source and destination for each song. Apply approves that move only. Skip advances, and Quit leaves the remaining songs pending. Before moving, verify the source still matches the reviewed file and use a move that rejects an occupied destination. Keep recovery information for each approved move so undo can restore completed moves in reverse order and detect conflicts. Undo restores the MP3 to its original path beside any existing `.l1ner.bak` from `fix`. Remove folders created by the run during undo when they are empty.
+
+See the [preview and apply milestones](../TODO.md#milestone--preview-album-folders).
+
 ## Data Integrity
 
 **Single-song decision.** `fix` stages a replacement in the same directory, verifies the proposed tags and unchanged audio, and publishes an exact `.l1ner.bak` backup before replacing the source. It refuses existing backups and changes detected during review. Restore by moving the backup over the MP3. See the [write and recovery details](technical-plan.md#single-song-fix).
@@ -223,7 +239,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] What is the current command structure?
 
-  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. Flags precede the path.
+  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. `organize --dry-run` accepts one directory. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.
