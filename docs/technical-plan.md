@@ -133,7 +133,7 @@ The writer uses an advisory lock and rechecks the path and SHA-256 before replac
 
 For audio-assisted fixes, the writer adds an approved missing title or artist within the existing tag version. If the MP3 has no tag, it prepends an ID3v2.4.0 tag with the approved fields and verifies the entire original byte stream after that tag.
 
-The backup is published under an exclusive `.l1ner.bak` name and synced before the verified stage is renamed over the MP3. A failure before rename preserves the original file. If the backup was already published, it remains available for recovery. A directory sync failure after rename is reported as a warning that the replacement was applied. Abrupt termination can leave `.l1ner-stage-*` files beside the MP3. Use the reported backup path for recovery. See the [recovery command](../README.md#fix-one-song).
+The backup is published under an exclusive `.l1ner.bak` name and synced before the verified stage is renamed over the MP3. A failure before rename preserves the original file. If the backup was already published, it remains available for recovery. A directory sync failure after rename is reported as a warning that the replacement was applied. Abrupt termination can leave `.l1ner-stage-*` files beside the MP3. Use the reported backup path for recovery. See the [recovery command](usage.md#fix-one-song).
 
 ## Folder fixes
 
@@ -141,7 +141,7 @@ The backup is published under an exclusive `.l1ner.bak` name and synced before t
 
 In audio mode the batch waits for the AcoustID reservation after calculating the fingerprint, keeping it in memory while the slot is busy. The wait honors cancellation and has a 10-second bound. A network or provider error after sending the request is reported for that file.
 
-An approved replacement and its backup are kept when the review ends. The batch tracks six outcomes in memory and counts unvisited songs as pending. A terminal or output failure stops further reviews. The [folder usage](../README.md#fix-a-folder) describes scope and exit codes.
+An approved replacement and its backup are kept when the review ends. The batch tracks six outcomes in memory and counts unvisited songs as pending. A terminal or output failure stops further reviews. The [folder usage](usage.md#fix-a-folder) describes scope and exit codes.
 
 Packaging, distribution, recursive editing, and additional tag formats remain deferred.
 
@@ -149,16 +149,16 @@ Packaging, distribution, recursive editing, and additional tag formats remain de
 
 `--release` uses one MusicBrainz release browse request for the selected recording. Recording search and release browse share the MusicBrainz rate marker. Release browse waits up to 10 seconds for the local slot and fetches a bounded page of up to 20 releases. The decoder matches the recording ID to each track and uses its numeric position and the position of its medium.
 
-Preview and fix use the same picker and proposal. For release tags the writer adds or replaces `TALB`, `TPE2`, `TRCK`, and `TPOS` through the same frame rewrite and staged verification used for title and artist. Each proposed field is checked against the staged tag. Folder review uses that same per-file path. [Usage](../README.md#add-album-and-track-tags)
+Preview and fix use the same picker and proposal. For release tags the writer adds or replaces `TALB`, `TPE2`, `TRCK`, and `TPOS` through the same frame rewrite and staged verification used for title and artist. Each proposed field is checked against the staged tag. Folder review uses that same per-file path. [Usage](usage.md#add-album-and-track-tags)
 
 ## Album folder preview
 
 `organize --dry-run` scans the immediate directory and opens each source read-only beneath the selected directory. It reuses the ID3 reader and the repeated-tag checks to derive the album artist and album. Source names and destination paths are stored relative to the root.
 
-The planner compares the proposed path components using Unicode case folding and checks existing destination names and entry types. It gathers the plan before rendering so every song involved in a planned collision can be marked as blocked. The command reports blockers separately from read or parse failures. [Usage](../README.md#preview-album-folders)
+The planner compares the proposed path components using Unicode case folding and checks existing destination names and entry types. It gathers the plan before rendering so every song involved in a planned collision can be marked as blocked. The command reports blockers separately from read or parse failures. [Usage](usage.md#preview-album-folders)
 
 ## Album moves and undo
 
 Apply and undo take an advisory lock on the selected directory. Apply reuses the planner and opens the reviewed MP3 under the selected root with an advisory file lock. It rechecks the reviewed inode and change time, fingerprints the file bytes with SHA-256 for recovery, and checks the destination again. Album folder components are opened one by one without following symlinks. Linux `renameat2` with `RENAME_NOREPLACE` moves the directory entry, then the command syncs both parent directories. [Linux rename semantics](https://man7.org/linux/man-pages/man2/renameat2.2.html)
 
-The journal is a versioned, owner-writable JSON Lines file in the selected root. The organizer syncs a move record before renaming the MP3. Undo validates complete records and reconciles interrupted moves against the original and destination paths using device, inode, and checksum. It records resolved entries so retry can continue after a blocker and an older completed journal cannot undo a later run. An incomplete final line can be discarded during recovery. Empty directories are removed only when the journal recorded their creation and their identities still match. [Usage](../README.md#apply-or-undo-album-moves)
+The journal is a versioned, owner-writable JSON Lines file in the selected root. The organizer syncs a move record before renaming the MP3. Undo validates complete records and reconciles interrupted moves against the original and destination paths using device, inode, and checksum. It records resolved entries so retry can continue after a blocker and an older completed journal cannot undo a later run. An incomplete final line can be discarded during recovery. Empty directories are removed only when the journal recorded their creation and their identities still match. [Usage](usage.md#apply-or-undo-album-moves)

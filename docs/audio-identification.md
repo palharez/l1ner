@@ -34,7 +34,7 @@ Each candidate shows a title, artist, MusicBrainz recording ID, and AcoustID sco
 ./bin/l1ner fix --from-audio music/song.mp3
 ```
 
-The picker offers linked recordings with both a title and an artist. Select one to compare the proposed values with the file's current tags. A missing field is marked **(missing)**. In preview, accepting records your decision for that run. In fix, select **Apply changes to this MP3** to write the approved title and artist. Skip is the default. Apply preserves the audio and saves an exact backup. See the [fix and recovery instructions](../README.md#fix-one-song).
+The picker offers linked recordings with both a title and an artist. Select one to compare the proposed values with the file's current tags. A missing field is marked **(missing)**. In preview, accepting records your decision for that run. In fix, select **Apply changes to this MP3** to write the approved title and artist. Skip is the default. Apply preserves the audio and saves an exact backup. See the [fix and recovery instructions](usage.md#fix-one-song).
 
 Audio-assisted review accepts an untagged MP3 or one with supported ID3v2 metadata. Legacy-only ID3v1, malformed tags, and unsupported tag features produce errors.
 
@@ -46,7 +46,7 @@ Audio-assisted review accepts an untagged MP3 or one with supported ID3v2 metada
 
 The batch reviews the immediate regular MP3s in filename order and skips symlinks. It fingerprints one song at a time, then waits up to 10 seconds for the local AcoustID rate limit before sending that fingerprint. Ctrl+C cancels the wait and leaves the current song pending. **Apply** approves only the displayed song and creates its backup. **Skip** advances to the next song, and **Quit** leaves the current and later songs pending.
 
-The batch continues after per-song errors and counts searches without eligible candidates as unresolved. An empty folder succeeds. A missing application key or missing `fpcalc` stops a nonempty batch with a setup error. The summary shows how many songs were applied, skipped, unchanged, unresolved, failed, and pending. [Folder exit codes and recovery](../README.md#fix-a-folder)
+The batch continues after per-song errors and counts searches without eligible candidates as unresolved. An empty folder succeeds. A missing application key or missing `fpcalc` stops a nonempty batch with a setup error. The summary shows how many songs were applied, skipped, unchanged, unresolved, failed, and pending. [Folder exit codes and recovery](usage.md#fix-a-folder)
 
 ## Troubleshooting
 

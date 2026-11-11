@@ -32,7 +32,7 @@ The CLI inspects local MP3 files and directories on Linux, searches by tags or a
 1. [x] **Read lookup tags.** Reuse the inspector and extract `TIT2` and `TPE1`. Trim whitespace, ignore blank values, and accept identical repeats. Report missing or conflicting values before any request. Test with generated ID3v2.3 and ID3v2.4 fixtures. Commit as `feat(lookup): extract title and artist for recording lookup`.
 2. [x] **Add the MusicBrainz client.** Search the HTTPS `/ws/2/recording` endpoint for title and credited artist with `fmt=json` and `limit=5`. Escape tag values as search literals and URL-encode the query. Identify l1ner in the `User-Agent`, set a timeout, and enforce the one-request-per-second limit across concurrent local invocations. Test the request, credited names and join phrases, empty results, throttling, timeouts, and malformed responses with a local server. Commit as `feat(musicbrainz): add recording search client`.
 3. [x] **Wire up `lookup`.** Accept one MP3 path and show candidates in service order. Preserve separate recordings even when they share a title and credit. Escape control characters in terminal output. Use exit `0` for a completed search including zero results, `1` for input, service, or output failures, and `2` for invalid arguments. Test the command with a local server, including zero requests on invalid tags and identical file checksums before and after lookup. Keep existing `inspect` tests passing. Commit as `feat(lookup): add single-file lookup command`.
-4. [x] **Verify and document the milestone.** Run `gofmt -w *.go`, `go test ./...`, `go vet ./...`, and `go build -o bin/l1ner .`. The original reference lookup missed its expected version. “My Home Town” returned the expected recording, and all checked input SHA-256 hashes matched before and after. See [usage](README.md#musicbrainz-lookup) and the [live validation results](docs/sample-validation.md#musicbrainz-lookup). Commit as `docs(lookup): document usage and live validation`.
+4. [x] **Verify and document the milestone.** Run `gofmt -w *.go`, `go test ./...`, `go vet ./...`, and `go build -o bin/l1ner .`. The original reference lookup missed its expected version. “My Home Town” returned the expected recording, and all checked input SHA-256 hashes matched before and after. See [usage](docs/usage.md#musicbrainz-lookup) and the [live validation results](docs/sample-validation.md#musicbrainz-lookup). Commit as `docs(lookup): document usage and live validation`.
 
 See the audio identification milestone for fingerprint-based lookup. Exact release selection remains open.
 
@@ -44,7 +44,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 
 1. [x] **Build the song proposal.** Use the selected recording ID and the existing title and artist to show current and proposed values. Flag changed values and show a clear outcome when both tags already agree. Test changed and unchanged tags with generated fixtures. Commit as `feat(preview): compare current and proposed song tags`.
 2. [x] **Add the interactive review.** Validate that input and output are terminals before searching. Reuse the existing search and rate limit. Show candidate IDs and available version details, then present the proposal and review choices. Verify selection, changing candidates, accepting, skipping, quitting, and cancellation. Commit as `feat(preview): add interactive song review`.
-3. [x] **Verify and document the milestone.** Tests use generated MP3s and a local MusicBrainz server. The [live terminal check](docs/sample-validation.md#interactive-preview) confirmed acceptance, terminal restoration, and an unchanged checksum. See the [usage](README.md#interactive-song-preview) and [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(preview): document and validate song review`.
+3. [x] **Verify and document the milestone.** Tests use generated MP3s and a local MusicBrainz server. The [live terminal check](docs/sample-validation.md#interactive-preview) confirmed acceptance, terminal restoration, and an unchanged checksum. See the [usage](docs/usage.md#interactive-song-preview) and [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(preview): document and validate song review`.
 
 ## Milestone — Safe single-song fix
 
@@ -53,7 +53,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 1. [x] **Rewrite approved ID3 frames.** Keep the existing tag version and preserve every unrelated frame and the audio. Test ID3v2.3 and ID3v2.4, repeated frames, Unicode, and unsupported features. Commit as `feat(fix): rewrite approved title and artist frames`.
 2. [x] **Stage and verify the replacement.** Work in the source directory, reject unsafe file layouts, check that the reviewed file has stayed the same, verify the staged tags and audio, and publish an exact `.l1ner.bak` backup before replacement. Test restoration, backup collisions, and failures. Commit as `feat(fix): verify and back up song edits`.
 3. [x] **Connect the wizard to the writer.** Make Apply an explicit choice with Skip highlighted, and test approval, skip, quit, cancellation, and the applied result through the terminal command. Commit as `feat(fix): apply approved single-song changes`.
-4. [x] **Verify and document the milestone.** The [live terminal check](docs/sample-validation.md#single-song-fix) verified the applied tags, unchanged audio and other frames, and exact restoration. See [usage and recovery](README.md#fix-one-song) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document single-song edits and recovery`.
+4. [x] **Verify and document the milestone.** The [live terminal check](docs/sample-validation.md#single-song-fix) verified the applied tags, unchanged audio and other frames, and exact restoration. See [usage and recovery](docs/usage.md#fix-one-song) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document single-song edits and recovery`.
 
 ## Milestone — Batch song fixes
 
@@ -61,7 +61,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 
 1. [x] Pace the MusicBrainz requests with a cancellable wait and keep the existing shared rate limit. Commit as `feat(fix): pace MusicBrainz searches during batch review`.
 2. [x] Reuse the one-song review and writer for directories. Report progress and counts for applied, skipped, unchanged, unresolved, failed, and pending songs. Continue after per-file failures. Commit as `feat(fix): review and apply fixes one song at a time`.
-3. [x] Verified all six outcomes with generated MP3s, a local server, and terminal input. Documented [folder usage](README.md#fix-a-folder) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document batch review and outcomes`.
+3. [x] Verified all six outcomes with generated MP3s, a local server, and terminal input. Documented [folder usage](docs/usage.md#fix-a-folder) and the [PR workflow](CONTRIBUTING.md#feature-workflow). Commit as `docs(fix): document batch review and outcomes`.
 
 ## Milestone — Identify a song from audio
 
@@ -69,7 +69,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 
 1. [x] Move the existing CLI and tests into `internal/cli` and keep the root entry point. Commit as `refactor(cli): move command workflows into internal`.
 2. [x] Add the local Chromaprint adapter and AcoustID client, with deterministic tests for ambiguous and missing results. Commit as `feat(identify): look up recordings from audio fingerprints`.
-3. [x] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. See the [setup](README.md#identify-a-song-from-audio) and [live check](docs/sample-validation.md#audio-identification). Follow the [PR workflow](CONTRIBUTING.md#feature-workflow).
+3. [x] Connect `identify` to the CLI and verify recognition with missing or incorrect tags. See the [setup](docs/usage.md#identify-a-song-from-audio) and [live check](docs/sample-validation.md#audio-identification). Follow the [PR workflow](CONTRIBUTING.md#feature-workflow).
 4. [x] Mark audio identification as optional in help and document how to register an AcoustID application and use its key. Verify the standard commands work without AcoustID setup. Commit as `docs(identify): explain optional AcoustID setup`.
 
 ## Milestone — Fix one song from audio

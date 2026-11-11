@@ -12,7 +12,7 @@ Use the checklist to track progress. When a question is resolved, record the dec
 
 - [x] Which existing metadata fields should the first MVP display?
 
-  **Decision:** Display all existing metadata the reader can expose, including custom fields, rather than a fixed shortlist. Implemented coverage and reader limitations are documented in the [README](../README.md#metadata-coverage): unknown frames are summarized, and unsupported versions/features are reported explicitly.
+  **Decision:** Display all existing metadata the reader can expose, including custom fields, rather than a fixed shortlist. Implemented coverage and reader limitations are documented in the [command guide](usage.md#metadata-coverage): unknown frames are summarized, and unsupported versions/features are reported explicitly.
 
 - [x] How should non-text metadata be presented in the terminal?
 
@@ -52,7 +52,7 @@ Use the checklist to track progress. When a question is resolved, record the dec
 
 - [x] How should users install and run the CLI?
 
-  **Decision:** For the first MVP, work directly from the source code and run it locally on the user's Linux machine. Downloadable binaries, installers, package-manager distribution, and a release process are deferred. Working commands are documented in the [README](../README.md#usage).
+  **Decision:** For the first MVP, work directly from the source code and run it locally on the user's Linux machine. Downloadable binaries, installers, package-manager distribution, and a release process are deferred. Working commands are documented in the [command guide](usage.md#usage).
 - [x] How will displayed values and an unchanged input file be verified, including missing metadata and unreadable inputs?
 
   **Decision:** Verify that the CLI displays existing tags in the reference MP3, leaves the input file unchanged, displays `No metadata found` for a file without tags, and reports a clear error for missing or unreadable files. Expected values must come from the embedded metadata, not just the source page. Generated fixtures cover output, parsing errors, and file integrity; checks compare file size, permissions, and whole-file SHA-256. Tests, vet, and build checks run in CI; see [CONTRIBUTING.md](../CONTRIBUTING.md#verification).
@@ -118,7 +118,7 @@ Artist     Example Artist   Example Artist  same
 
 Highlight Skip by default on the proposal screen. Accept records the decision for the current run and prints a summary of the accepted proposal. Skip ends review of that song. Quit and Ctrl+C exit the review. If the tags already agree, show that outcome and finish. The milestone opens the MP3 read-only, and the terminal is restored when the wizard exits.
 
-**Implemented batch behavior.** `l1ner fix <directory>` reviews immediate MP3s in lexical order with progress such as `Song 3 of 20`. Apply writes and backs up the displayed song, Skip advances, and Quit leaves the current and later songs pending. The summary counts applied, skipped, unchanged, unresolved, failed, and pending songs. Revisiting decisions and saved sessions remain open. See [folder usage](../README.md#fix-a-folder).
+**Implemented batch behavior.** `l1ner fix <directory>` reviews immediate MP3s in lexical order with progress such as `Song 3 of 20`. Apply writes and backs up the displayed song, Skip advances, and Quit leaves the current and later songs pending. The summary counts applied, skipped, unchanged, unresolved, failed, and pending songs. Revisiting decisions and saved sessions remain open. See [folder usage](usage.md#fix-a-folder).
 
 ## Broader Product — Product Validation
 
@@ -196,7 +196,7 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] How should the first release-tagging workflow choose an edition?
 
-  **Decision.** `--release` adds a release picker after recording selection in `preview` and `fix`. MusicBrainz receives the selected recording ID. Review the matching tracks from the first page of up to 20 releases, with disc and track position and available edition details. The selected release contributes album, album artist when credited, track number, and disc number. A folder uses the same selection and approval for each song. [Release tagging usage](../README.md#add-album-and-track-tags)
+  **Decision.** `--release` adds a release picker after recording selection in `preview` and `fix`. MusicBrainz receives the selected recording ID. Review the matching tracks from the first page of up to 20 releases, with disc and track position and available edition details. The selected release contributes album, album artist when credited, track number, and disc number. A folder uses the same selection and approval for each song. [Release tagging usage](usage.md#add-album-and-track-tags)
 
 - [ ] How should different recordings, remasters, and album editions be distinguished?
 - [ ] How should match confidence be calculated and communicated?
@@ -212,11 +212,11 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 - [x] How should a preview handle unsafe paths and collisions?
 
-  **Implemented.** Reuse the offline ID3 reader and the existing directory discovery rules. Validate each proposed folder name as a single path component. Report invalid names, symlinks in destination paths, occupied destinations, and names that collide after Unicode case folding. Show the source path and the reason for each blocked item. The preview reads the filesystem and prints its plan to the terminal. [Usage](../README.md#preview-album-folders)
+  **Implemented.** Reuse the offline ID3 reader and the existing directory discovery rules. Validate each proposed folder name as a single path component. Report invalid names, symlinks in destination paths, occupied destinations, and names that collide after Unicode case folding. Show the source path and the reason for each blocked item. The preview reads the filesystem and prints its plan to the terminal. [Usage](usage.md#preview-album-folders)
 
 - [x] What should approval and undo cover?
 
-  **Implemented.** Show the exact source and destination for each song. Apply approves that move only. Skip advances, and Quit leaves the remaining songs pending. Before moving, verify the source still matches the reviewed file and use a move that rejects an occupied destination. The per-run journal lets undo reconcile interrupted moves and restore completed moves in reverse order. Undo restores the MP3 to its original path beside any existing `.l1ner.bak` from `fix` and removes empty folders created by the run. [Apply and undo usage](../README.md#apply-or-undo-album-moves)
+  **Implemented.** Show the exact source and destination for each song. Apply approves that move only. Skip advances, and Quit leaves the remaining songs pending. Before moving, verify the source still matches the reviewed file and use a move that rejects an occupied destination. The per-run journal lets undo reconcile interrupted moves and restore completed moves in reverse order. Undo restores the MP3 to its original path beside any existing `.l1ner.bak` from `fix` and removes empty folders created by the run. [Apply and undo usage](usage.md#apply-or-undo-album-moves)
 
 See the [preview and apply milestones](../TODO.md#milestone--preview-album-folders).
 
