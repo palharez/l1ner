@@ -150,3 +150,9 @@ Packaging, distribution, recursive editing, and additional tag formats remain de
 `--release` uses one MusicBrainz release browse request for the selected recording. Recording search and release browse share the MusicBrainz rate marker. Release browse waits up to 10 seconds for the local slot and fetches a bounded page of up to 20 releases. The decoder matches the recording ID to each track and uses its numeric position and the position of its medium.
 
 Preview and fix use the same picker and proposal. For release tags the writer adds or replaces `TALB`, `TPE2`, `TRCK`, and `TPOS` through the same frame rewrite and staged verification used for title and artist. Each proposed field is checked against the staged tag. Folder review uses that same per-file path. [Usage](../README.md#add-album-and-track-tags)
+
+## Album folder preview
+
+`organize --dry-run` scans the immediate directory and opens each source read-only beneath the selected directory. It reuses the ID3 reader and the repeated-tag checks to derive the album artist and album. Source names and destination paths are stored relative to the root.
+
+The planner compares the proposed path components using Unicode case folding and checks existing destination names and entry types. It gathers the plan before rendering so every song involved in a planned collision can be marked as blocked. The command reports blockers separately from read or parse failures. [Usage](../README.md#preview-album-folders)

@@ -206,13 +206,13 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
 ## Album Organization
 
-- [ ] Which folder and tags define an album group?
+- [x] Which folder and tags define an album group?
 
-  **Proposed layout.** Use the selected directory as both the source and destination root. Review the regular MP3s directly inside it in lexical order. Place each eligible file at `<album artist>/<album>/<original filename>` relative to that root. Read the album artist from `TPE2` and the album from `TALB`. This puts compilation tracks with the same album artist and album together. Missing or conflicting values need attention. The layout groups by those two tags, so editions with the same credited album artist and album name share a folder.
+  **Layout.** Use the selected directory as both the source and destination root. Review the regular MP3s directly inside it in lexical order. Plan each eligible file at `<album artist>/<album>/<original filename>` relative to that root. Read the album artist from `TPE2` and the album from `TALB`. This puts compilation tracks with the same album artist and album together. Missing or conflicting values need attention. The layout groups by those two tags, so editions with the same credited album artist and album name share a folder.
 
-- [ ] How should a preview handle unsafe paths and collisions?
+- [x] How should a preview handle unsafe paths and collisions?
 
-  **Proposed behavior.** Reuse the offline ID3 reader and the existing directory discovery rules. Validate each proposed folder name as a single path component. Report invalid names, symlinks in destination paths, occupied destinations, and names that would collide on a case-insensitive filesystem. Show the source path and the reason for each blocked item. The preview reads the filesystem and prints its plan to the terminal.
+  **Implemented.** Reuse the offline ID3 reader and the existing directory discovery rules. Validate each proposed folder name as a single path component. Report invalid names, symlinks in destination paths, occupied destinations, and names that collide after Unicode case folding. Show the source path and the reason for each blocked item. The preview reads the filesystem and prints its plan to the terminal. [Usage](../README.md#preview-album-folders)
 
 - [ ] What should approval and undo cover?
 
@@ -239,7 +239,7 @@ See the [preview and apply milestones](../TODO.md#milestone--preview-album-folde
 
 - [x] What is the current command structure?
 
-  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. Flags precede the path.
+  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. `organize --dry-run` accepts one directory. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.

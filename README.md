@@ -184,6 +184,18 @@ Choose an edition to preview its album, album artist, track number, and disc num
 
 In a folder, choose a recording and release for each song. **Apply changes to this MP3** writes the displayed proposal and saves the exact original as `.l1ner.bak`. **Skip song** advances to the next file. Audio matching through `--from-audio` uses the [AcoustID setup](docs/audio-identification.md#set-up-on-linux).
 
+### Preview album folders
+
+```sh
+./bin/l1ner organize --dry-run music/
+```
+
+The preview reads the regular MP3s directly inside the selected folder and shows their proposed destinations in filename order. It uses album artist (`TPE2`) and album (`TALB`) as the folder names and uses each original filename. For example, `music/song.mp3` can become `music/Tom Lehrer/Revisited/song.mp3`. Tracks with a shared album artist and album go into the same folder, including compilations.
+
+The preview works offline and is read-only. A file is blocked if a required tag is missing or conflicting, a name contains a path separator or control character, or the destination is unsafe or occupied. Case-insensitive collisions are flagged among proposed paths and against existing paths. Symlink entries are skipped, and a symlink directory root is rejected.
+
+The summary counts planned, blocked, and failed files plus scan errors. A completed preview exits `0`, including an empty folder or blocked files. A scan, read, parse, or output error exits `1`. Invalid command arguments exit `2`.
+
 ## Development
 
 The initial development target is Linux with Go 1.27.3. Verify your Go installation:
