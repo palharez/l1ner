@@ -101,7 +101,7 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 **Branch** `milestone/album-organization-preview`. `l1ner organize --dry-run <directory>` shows where the immediate MP3s would go under the selected folder. For example, `music/song.mp3` would go to `music/Tom Lehrer/Revisited/song.mp3`. See the [album layout proposal](docs/open-questions.md#album-organization).
 
 1. [x] Build the plan from the existing directory scan and ID3 reader. Use album artist and album for the folder names and the source basename for the filename. Report missing or conflicting tags, unsafe path components, and occupied or conflicting destinations. Commit as `feat(organize): plan album folders from MP3 tags`.
-2. [ ] Expose the read-only plan in the CLI. Show each source and destination or the reason it needs attention. Verify stable output, separate folders for two artists with albums of the same name, compilation grouping, and collisions. Compare paths and checksums before and after preview. Commit as `feat(organize): preview album folder changes`.
+2. [x] Expose the read-only plan in the CLI. Show each source and destination or the reason it needs attention. Verify stable output, separate folders for two artists with albums of the same name, compilation grouping, and collisions. Compare paths and checksums before and after preview. Commit as `feat(organize): preview album folder changes`.
 3. [ ] Run the contributor checks, document the command, and open the preview PR for review. Commit as `docs(organize): document the album layout preview`.
 
 ## Milestone — Apply and undo album organization
