@@ -24,7 +24,7 @@ Install VHS and put `ttyd` and FFmpeg with `libmp3lame` on your `PATH`. The tape
 bash docs/record-demo.sh
 ```
 
-The script builds l1ner and generates two silent MP3s in a temporary directory. It records the commands and key presses from the [VHS tape](docs/demo.tape) and updates `docs/demo.gif`.
+The script builds a demo executable that runs l1ner's CLI with [sample MusicBrainz responses](docs/demo_main.go). It generates two silent MP3s in a temporary directory and records the [VHS tape](docs/demo.tape) to `docs/demo.gif`.
 
 ## Go style
 
