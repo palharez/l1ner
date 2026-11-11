@@ -196,6 +196,24 @@ The preview works offline and is read-only. A file is blocked if a required tag 
 
 The summary counts planned, blocked, and failed files plus scan errors. A completed preview exits `0`, including an empty folder or blocked files. A scan, read, parse, or output error exits `1`. Invalid command arguments exit `2`.
 
+### Apply or undo album moves
+
+```sh
+./bin/l1ner organize --apply music/
+```
+
+Apply builds the same plan in a terminal. Review each source and destination, then choose **Apply move**, **Skip song**, or **Quit**. Skip is highlighted by default. Apply moves the displayed MP3 with its original filename and bytes. Quit or Ctrl+C leaves the remaining songs pending.
+
+The first approval prints a `Journal:` path inside the selected folder. Keep that journal with the folder and pass its printed path to undo.
+
+```sh
+./bin/l1ner organize --undo 'music/.l1ner-organize-<run-id>.jsonl'
+```
+
+Undo restores original paths in reverse order and removes empty album folders created by the run. It checks the recorded file identity and SHA-256 and blocks occupied restore paths. Retry with the same journal after resolving a blocker. If a run was interrupted, use its journal to reconcile the moves before starting another run. A restored song returns to the path used by any existing `.l1ner.bak` tag backup.
+
+Apply and undo require same-filesystem moves and Linux support for renaming without replacing an existing entry. Apply exits `0` when review completes or quits without failures, including blocked songs. Undo exits `1` for blocked restores. Both exit `1` on operational errors, `2` for invalid arguments, and `130` on cancellation.
+
 ## Development
 
 The initial development target is Linux with Go 1.27.3. Verify your Go installation:

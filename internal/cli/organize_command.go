@@ -8,26 +8,37 @@ import (
 	"path/filepath"
 )
 
-const organizeSyntax = "l1ner organize --dry-run <directory>\n       l1ner organize --apply <directory>"
+const organizeSyntax = "l1ner organize --dry-run <directory>\n       l1ner organize --apply <directory>\n       l1ner organize --undo <journal>"
 
 func runOrganize(args []string, in io.Reader, out, errOut io.Writer) int {
 	flags := flag.NewFlagSet("organize", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	dryRun := flags.Bool("dry-run", false, "preview album folders")
 	apply := flags.Bool("apply", false, "review and move songs into album folders")
+	undo := flags.Bool("undo", false, "restore original paths from a journal")
 	err := flags.Parse(args)
 	if errors.Is(err, flag.ErrHelp) {
-		if _, err := fmt.Fprintln(out, "Usage: "+organizeSyntax+"\nPreview album folders or approve moves using embedded MP3 tags."); err != nil {
+		if _, err := fmt.Fprintln(out, "Usage: "+organizeSyntax+"\nPreview album folders, approve moves, or undo an organization run."); err != nil {
 			reportError(errOut, err)
 			return 1
 		}
 		return 0
 	}
-	if err == nil && *dryRun == *apply {
-		err = errors.New("choose one of --dry-run or --apply")
+	modes := 0
+	for _, selected := range []bool{*dryRun, *apply, *undo} {
+		if selected {
+			modes++
+		}
+	}
+	if err == nil && modes != 1 {
+		err = errors.New("choose one of --dry-run, --apply, or --undo")
 	}
 	if err == nil && (flags.NArg() != 1 || flags.Arg(0) == "") {
-		err = errors.New("expected one directory path")
+		if *undo {
+			err = errors.New("expected one journal path")
+		} else {
+			err = errors.New("expected one directory path")
+		}
 	}
 	if err != nil {
 		reportError(errOut, err)
@@ -35,6 +46,9 @@ func runOrganize(args []string, in io.Reader, out, errOut io.Writer) int {
 		return 2
 	}
 
+	if *undo {
+		return runOrganizeUndo(flags.Arg(0), out, errOut)
+	}
 	if *apply {
 		choose, ok := terminalMenu(in, out)
 		if !ok {

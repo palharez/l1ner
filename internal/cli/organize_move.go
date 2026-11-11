@@ -137,22 +137,33 @@ func (w *albumWorkspace) moveSong(ctx context.Context, song *reviewedAlbumSong, 
 	}
 	defer folder.Close()
 	record := albumJournalMove{Source: move.source, Destination: move.destination, File: albumIdentity(song.info), SHA256: digest}
-	if err := journal.append(albumJournalEntry{Move: &record}); err != nil {
+	entry, err := journal.record(albumJournalEntry{Move: &record})
+	if err != nil {
 		return false, err
 	}
+	moved, err := w.renameReviewedSong(ctx, song, folderPath, folder)
+	if !moved {
+		if _, logErr := journal.record(albumJournalEntry{Resolved: entry}); logErr != nil {
+			return false, errors.Join(err, logErr)
+		}
+	}
+	return moved, err
+}
+
+func (w *albumWorkspace) renameReviewedSong(ctx context.Context, song *reviewedAlbumSong, folderPath string, folder *os.File) (bool, error) {
 	if err := w.verifyRoot(); err != nil {
 		return false, albumRecoveryError{err}
 	}
 	if err := verifyAlbumFolder(w.directory, folderPath, folder); err != nil {
 		return false, err
 	}
-	if err := verifyAlbumFile(w.directory, move.source, song.info); err != nil {
+	if err := verifyAlbumFile(w.directory, song.move.source, song.info); err != nil {
 		return false, err
 	}
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	return renameAlbumFile(w.directory, folder, move.source)
+	return renameAlbumFile(w.directory, folder, song.move.source)
 }
 
 func openAlbumFileAt(parent *os.File, name string) (*os.File, error) {
@@ -211,7 +222,7 @@ func createAlbumFolder(parent *os.File, name, relative string, journal *albumJou
 		return nil, err
 	}
 	record := albumJournalFolder{Path: relative, File: albumIdentity(info)}
-	if err := journal.append(albumJournalEntry{Folder: &record}); err != nil {
+	if _, err := journal.record(albumJournalEntry{Folder: &record}); err != nil {
 		return nil, err
 	}
 	if err := parent.Sync(); err != nil {

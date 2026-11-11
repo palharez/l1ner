@@ -75,6 +75,12 @@ Two runs of the built `organize --dry-run` command on a temporary mixed folder p
 
 The local 20-file sample folder reported 20 blockers because each sample lacked an album artist tag. All paths and file SHA-256 checksums in both folders matched their pre-run snapshots.
 
+## Apply and undo album moves
+
+The built CLI ran `organize --apply` in a Linux pseudo-terminal on a disposable folder with three generated MP3s and a tag backup. The reviewer applied one move, skipped one song, and quit on the third. The summary reported one moved, one skipped, and one pending. The moved MP3 matched its pre-run checksum.
+
+The built `organize --undo` restored the original path and removed the empty album folders it had created. Every original path and checksum matched the initial snapshot, including the tag backup. Automated tests also covered an occupied destination after review, an occupied restore path followed by retry, and recovery after a partial final journal entry.
+
 ## Limits of this collection
 
 The collection covers one artist, one album family, and one tag version. Generated tests cover ID3v2.4, artwork, repeated fields, unusual encodings, malformed files, and unsupported flags independently of the downloads.

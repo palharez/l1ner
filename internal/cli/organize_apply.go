@@ -41,7 +41,11 @@ func runOrganizeApply(path string, out, errOut io.Writer, choose menuSelector) i
 		run.journal.file.Close()
 	}
 	code := 0
+	var recoveryErr albumRecoveryError
 	switch {
+	case errors.As(err, &recoveryErr):
+		reportError(errOut, err)
+		code = 1
 	case errors.Is(err, errPreviewCanceled) || errors.Is(err, context.Canceled):
 		fmt.Fprintln(errOut, "Organization canceled.")
 		code = 130

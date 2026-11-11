@@ -156,3 +156,9 @@ Preview and fix use the same picker and proposal. For release tags the writer ad
 `organize --dry-run` scans the immediate directory and opens each source read-only beneath the selected directory. It reuses the ID3 reader and the repeated-tag checks to derive the album artist and album. Source names and destination paths are stored relative to the root.
 
 The planner compares the proposed path components using Unicode case folding and checks existing destination names and entry types. It gathers the plan before rendering so every song involved in a planned collision can be marked as blocked. The command reports blockers separately from read or parse failures. [Usage](../README.md#preview-album-folders)
+
+## Album moves and undo
+
+Apply and undo take an advisory lock on the selected directory. Apply reuses the planner and opens the reviewed MP3 under the selected root with an advisory file lock. It rechecks the reviewed inode and change time, fingerprints the file bytes with SHA-256 for recovery, and checks the destination again. Album folder components are opened one by one without following symlinks. Linux `renameat2` with `RENAME_NOREPLACE` moves the directory entry, then the command syncs both parent directories. [Linux rename semantics](https://man7.org/linux/man-pages/man2/renameat2.2.html)
+
+The journal is a versioned, owner-writable JSON Lines file in the selected root. The organizer syncs a move record before renaming the MP3. Undo validates complete records and reconciles interrupted moves against the original and destination paths using device, inode, and checksum. It records resolved entries so retry can continue after a blocker and an older completed journal cannot undo a later run. An incomplete final line can be discarded during recovery. Empty directories are removed only when the journal recorded their creation and their identities still match. [Usage](../README.md#apply-or-undo-album-moves)

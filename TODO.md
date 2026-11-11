@@ -106,11 +106,11 @@ See the audio identification milestone for fingerprint-based lookup. Exact relea
 
 ## Milestone — Apply and undo album organization
 
-**Proposed branch** `milestone/album-organization-apply`, based on the merged preview milestone. `l1ner organize --apply <directory>` uses the same plan and reviews each move before changing the selected folder. `l1ner organize --undo <journal>` restores original paths from that run.
+**Branch** `milestone/album-organization-apply`. `l1ner organize --apply <directory>` uses the same plan and reviews each move before changing the selected folder. `l1ner organize --undo <journal>` restores original paths from that run.
 
 1. [x] Implement a root-relative move that fails when the destination exists. Recheck the source and destination after approval, create destination folders as needed, and use a same-filesystem move. Record recoverable move information before changing a path. Commit as `feat(organize): move songs safely and record recovery information`.
 2. [x] Reuse the terminal review for Apply, Skip, and Quit. Display the journal path and a summary of moved, skipped, blocked, failed, and pending songs. Verify that a destination created after review blocks the move and that Quit preserves completed approvals. Commit as `feat(organize): review and apply each album move`.
-3. [ ] Implement undo for completed moves and reconcile a run interrupted during a move. Verify restored paths and exact checksums, occupied restore paths, existing tag backups, and retry after a partial undo. Run the contributor checks, document apply and undo, and open the milestone PR. Commit as `feat(organize): undo an album organization run`.
+3. [x] Implement undo for completed moves and reconcile a run interrupted during a move. Verify restored paths and exact checksums, occupied restore paths, existing tag backups, and retry after a partial undo. Run the contributor checks, document apply and undo, and open the milestone PR. Commit as `feat(organize): undo an album organization run`.
 
 ## Future directions — not committed scope
 
