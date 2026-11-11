@@ -16,6 +16,16 @@ Local audio belongs in the ignored `music/` directory. Tests must run without pe
 
 The root `main.go` launches the commands in `internal/cli`. Audio fingerprinting and AcoustID lookup live in `internal/identify`. The two services share the local request lock in `internal/ratelimit`.
 
+### Record the README demo
+
+Install VHS and put `ttyd` and FFmpeg with `libmp3lame` on your `PATH`. The tape uses the DejaVu Sans Mono font. [VHS installation](https://github.com/charmbracelet/vhs#installation)
+
+```sh
+bash docs/record-demo.sh
+```
+
+The script builds l1ner and generates two silent MP3s in a temporary directory. It records the commands and key presses from the [VHS tape](docs/demo.tape) and updates `docs/demo.gif`.
+
 ## Go style
 
 We follow the [Google Go Style Guide](https://google.github.io/styleguide/go/guide), with its [style decisions](https://google.github.io/styleguide/go/decisions) and [best practices](https://google.github.io/styleguide/go/best-practices). The [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments) provide additional review guidance.

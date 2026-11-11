@@ -8,6 +8,8 @@ into album folders. The tags live in the MP3s, so they travel with your music.
 
 [Install](#install) · [Quickstart](#quickstart) · [Identify by sound](#identify-by-sound) · [Command guide](docs/usage.md)
 
+![Terminal demo of l1ner inspecting MP3 tags, previewing album folders, and applying one move while skipping another](docs/demo.gif)
+
 ## Install
 
 **Download a binary.** When a Linux x86-64 release is available, download its
