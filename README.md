@@ -8,7 +8,9 @@ into album folders. The tags live in the MP3s, so they travel with your music.
 
 [Install](#install) · [Quickstart](#quickstart) · [Identify by sound](#identify-by-sound) · [Command guide](docs/usage.md)
 
-![Terminal demo of l1ner inspecting MP3 tags, previewing album folders, and applying one move while skipping another](docs/demo.gif)
+![Terminal demo of l1ner correcting a song title and album, verifying the saved tags, and reviewing album moves](docs/demo.gif)
+
+Recorded with generated MP3s and sample MusicBrainz responses.
 
 ## Install
 
