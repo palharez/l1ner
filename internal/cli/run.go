@@ -36,7 +36,7 @@ func runCommand(args []string, in io.Reader, out, errOut io.Writer, search recor
 		case "identify":
 			return runIdentify(args[1:], out, errOut, identify.Search)
 		case "organize":
-			return runOrganize(args[1:], out, errOut)
+			return runOrganize(args[1:], in, out, errOut)
 		case "preview", "fix":
 			searches := reviewSearches{recording: search, audio: identify.SearchFile, releases: searchMusicBrainzReleases}
 			return runSongReview(args[0], args[1:], in, out, errOut, searches, identify.SearchFileForBatch)

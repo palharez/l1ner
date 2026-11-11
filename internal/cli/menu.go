@@ -20,6 +20,21 @@ type menuOption struct {
 	details []string
 }
 
+func terminalMenu(in io.Reader, out io.Writer) (menuSelector, bool) {
+	input, inputIsFile := in.(*os.File)
+	output, outputIsFile := out.(*os.File)
+	if !inputIsFile || !outputIsFile || !term.IsTerminal(int(input.Fd())) || !term.IsTerminal(int(output.Fd())) {
+		return nil, false
+	}
+	return func(ctx context.Context, question string, options []menuOption, selected int) (int, error) {
+		choice, err := selectTerminalMenu(ctx, input, output, question, options, selected)
+		if err != nil && !errors.Is(err, errPreviewCanceled) {
+			return 0, reviewUIError{err}
+		}
+		return choice, err
+	}, true
+}
+
 func selectTerminalMenu(ctx context.Context, in, out *os.File, question string, options []menuOption, selected int) (choice int, err error) {
 	if err := ctx.Err(); err != nil {
 		return 0, err

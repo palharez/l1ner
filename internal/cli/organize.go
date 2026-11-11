@@ -28,47 +28,64 @@ type albumMove struct {
 var foldAlbumPath = cases.Fold()
 
 func planAlbumFolders(path string) (albumPlan, error) {
-	root := filepath.Clean(path)
-	info, err := os.Lstat(root)
-	if err != nil {
-		return albumPlan{}, err
-	}
-	if info.Mode()&os.ModeSymlink != 0 {
-		return albumPlan{}, fmt.Errorf("directory path is a symbolic link: %s", root)
-	}
-	if !info.IsDir() {
-		return albumPlan{}, fmt.Errorf("expected a directory: %s", root)
-	}
-	dir, err := os.OpenRoot(root)
+	dir, err := openAlbumRoot(path)
 	if err != nil {
 		return albumPlan{}, err
 	}
 	defer dir.Close()
+	return planAlbumRoot(dir), nil
+}
+
+func openAlbumRoot(path string) (*os.Root, error) {
+	root := filepath.Clean(path)
+	info, err := os.Lstat(root)
+	if err != nil {
+		return nil, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return nil, fmt.Errorf("directory path is a symbolic link: %s", root)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("expected a directory: %s", root)
+	}
+	dir, err := os.OpenRoot(root)
+	if err != nil {
+		return nil, err
+	}
 	opened, err := dir.Stat(".")
 	if err != nil {
-		return albumPlan{}, err
+		dir.Close()
+		return nil, err
 	}
 	if !os.SameFile(info, opened) {
-		return albumPlan{}, fmt.Errorf("selected directory changed while opening: %s", root)
+		dir.Close()
+		return nil, fmt.Errorf("selected directory changed while opening: %s", root)
 	}
+	return dir, nil
+}
 
+func planAlbumRoot(dir *os.Root) albumPlan {
+	root := dir.Name()
 	scan := scanDirectory(root, false)
 	plan := albumPlan{root: root, scanErrors: scan.errors}
 	for _, path := range scan.paths {
 		plan.moves = append(plan.moves, planAlbumMove(dir, filepath.Base(path)))
 	}
 	checkAlbumDestinations(dir.FS(), plan.moves)
-	return plan, nil
+	return plan
 }
 
 func planAlbumMove(dir *os.Root, source string) albumMove {
-	move := albumMove{source: source}
 	file, err := dir.OpenFile(source, os.O_RDONLY|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
 	if err != nil {
-		move.err = err
-		return move
+		return albumMove{source: source, err: err}
 	}
 	defer file.Close()
+	return albumMoveFromFile(file, source)
+}
+
+func albumMoveFromFile(file *os.File, source string) albumMove {
+	move := albumMove{source: source}
 	entries, err := inspectOpenMP3(file)
 	if err != nil {
 		move.err = err
@@ -104,7 +121,7 @@ func validAlbumComponent(name string) bool {
 
 func checkAlbumDestinations(root fs.FS, moves []albumMove) {
 	conflicts := albumPathConflicts(moves)
-	names := albumDirectoryNames{root: root, directories: make(map[string]map[string][]fs.DirEntry)}
+	names := albumDirectoryNames{root: root}
 	for i := range moves {
 		move := &moves[i]
 		if move.destination == "" {
@@ -187,6 +204,9 @@ func (names *albumDirectoryNames) read(parent string) (map[string][]fs.DirEntry,
 	for _, child := range children {
 		key := foldAlbumPath.String(child.Name())
 		entries[key] = append(entries[key], child)
+	}
+	if names.directories == nil {
+		names.directories = make(map[string]map[string][]fs.DirEntry)
 	}
 	names.directories[parent] = entries
 	return entries, nil

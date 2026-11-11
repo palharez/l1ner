@@ -214,9 +214,9 @@ Highlight Skip by default on the proposal screen. Accept records the decision fo
 
   **Implemented.** Reuse the offline ID3 reader and the existing directory discovery rules. Validate each proposed folder name as a single path component. Report invalid names, symlinks in destination paths, occupied destinations, and names that collide after Unicode case folding. Show the source path and the reason for each blocked item. The preview reads the filesystem and prints its plan to the terminal. [Usage](../README.md#preview-album-folders)
 
-- [ ] What should approval and undo cover?
+- [x] What should approval and undo cover?
 
-  **Proposed behavior.** Show the exact source and destination for each song. Apply approves that move only. Skip advances, and Quit leaves the remaining songs pending. Before moving, verify the source still matches the reviewed file and use a move that rejects an occupied destination. Keep recovery information for each approved move so undo can restore completed moves in reverse order and detect conflicts. Undo restores the MP3 to its original path beside any existing `.l1ner.bak` from `fix`. Remove folders created by the run during undo when they are empty.
+  **Implemented.** Show the exact source and destination for each song. Apply approves that move only. Skip advances, and Quit leaves the remaining songs pending. Before moving, verify the source still matches the reviewed file and use a move that rejects an occupied destination. The per-run journal lets undo reconcile interrupted moves and restore completed moves in reverse order. Undo restores the MP3 to its original path beside any existing `.l1ner.bak` from `fix` and removes empty folders created by the run. [Apply and undo usage](../README.md#apply-or-undo-album-moves)
 
 See the [preview and apply milestones](../TODO.md#milestone--preview-album-folders).
 
@@ -239,7 +239,7 @@ See the [preview and apply milestones](../TODO.md#milestone--preview-album-folde
 
 - [x] What is the current command structure?
 
-  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. `organize --dry-run` accepts one directory. Flags precede the path.
+  **Implemented.** `inspect` accepts a file or directory with optional `--recursive` and `--json`. `lookup`, `identify`, and `preview` accept one MP3. `fix` accepts a file or directory. Both `preview` and `fix` accept `--from-audio` and `--release`. `organize --dry-run` and `organize --apply` accept one directory. `organize --undo` accepts one journal. Flags precede the path.
 - [ ] How should progress and match confidence be displayed in future workflows?
 
   **Current behavior:** Inspection emits per-file metadata, path-specific errors, and a directory summary. It computes no match confidence.
